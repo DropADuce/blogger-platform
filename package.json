@@ -1,0 +1,33 @@
+{
+  "name": "blogger-platform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"yarn tsc -w\" \"yarn nodemon --inspect ./dist/index.js\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "repository": "https://github.com/DropADuce/blogger-platform.git",
+  "author": "Druce <lapuzin@tochka.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1",
+    "typescript-eslint": "^8.54.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "25.2.0",
+    "@types/supertest": "6.0.3",
+    "concurrently": "9.2.1",
+    "eslint": "9.39.2",
+    "eslint-config-prettier": "10.1.8",
+    "nodemon": "3.1.11",
+    "prettier": "3.8.1",
+    "supertest": "7.2.2",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}
