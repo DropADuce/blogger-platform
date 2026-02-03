@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"yarn tsc -w\" \"yarn nodemon --inspect ./dist/index.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
   },
   "private": true,
   "repository": "https://github.com/DropADuce/blogger-platform.git",

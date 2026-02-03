@@ -1,12 +1,11 @@
 import express from "express";
+import { setupApp } from './setup-app';
 
 const app = express();
 
-const port = process.env.PORT || 5001;
+setupApp(app);
 
-app.get("/", async (req, res) => {
-  res.send("Hello World!!!");
-})
+const port = process.env.PORT || 5001;
 
 app.listen(port, () => {
   console.log(`Сервер стартанул на порту ${port}`);
