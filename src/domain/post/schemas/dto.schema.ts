@@ -6,3 +6,5 @@ export const DtoSchema = z.object({
   content: z.string().max(1_000, 'Максимальная длинна - 1_000 символов'),
   blogId: z.string()
 });
+
+export type PostDTO = z.infer<typeof DtoSchema>;
