@@ -1,48 +1,26 @@
-import { Request, Response, Router } from 'express';
-import { BlogsRepo } from '../../../repositories/blogs.repo';
+import { Router } from 'express';
 import { basicAuthMiddleware } from '../../../core/middlewares/basic-auth-middleware';
 import { dtoValidationMiddleware } from '../../../core/middlewares/dto-validation-middleware';
 import { DtoSchema } from '../schemas/dto.schema';
-import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
+import { getBlogsService } from '../services/get-blogs.service';
+import { postBlogService } from '../services/post-blog.service';
+import { updateBlogService } from '../services/update-blog.service';
+import { deleteBlogService } from '../services/delete-blog.service';
+import { getBlogService } from '../services/get-blog-service';
 
-export const router = Router();
-
-router.get('/', (_, res: Response) => {
-  res.send(BlogsRepo.getAll());
-});
-
-router.get('/:id', (req: Request, res: Response) => {
-  const blog = BlogsRepo.findByID(String(req.params.id));
-
-  return blog ? res.send(blog) : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-});
-
-router.post(
-  '/',
-  basicAuthMiddleware,
-  dtoValidationMiddleware(DtoSchema),
-  (req, res) => {
-    return res.status(HTTP_STATUS.CREATED).send(BlogsRepo.create(req.body));
-  }
-);
-
-router.put(
-  '/:id',
-  basicAuthMiddleware,
-  dtoValidationMiddleware(DtoSchema),
-  (req, res) => {
-    const replaced = BlogsRepo.replace(String(req.params.id), req.body);
-
-    return replaced
-      ? res.sendStatus(HTTP_STATUS.NO_CONTENT)
-      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  }
-);
-
-router.delete('/:id', basicAuthMiddleware, (req: Request, res: Response) => {
-  const deleted = BlogsRepo.remove(String(req.params.id));
-
-  return deleted
-    ? res.sendStatus(HTTP_STATUS.NO_CONTENT)
-    : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-});
+export const router = Router()
+  .get('/', getBlogsService)
+  .get('/:id', getBlogService)
+  .post(
+    '/',
+    basicAuthMiddleware,
+    dtoValidationMiddleware(DtoSchema),
+    postBlogService
+  )
+  .put(
+    '/:id',
+    basicAuthMiddleware,
+    dtoValidationMiddleware(DtoSchema),
+    updateBlogService
+  )
+  .delete('/:id', basicAuthMiddleware, deleteBlogService);

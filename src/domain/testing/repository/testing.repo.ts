@@ -1,4 +1,4 @@
-import { DB } from '../db/in-memory.db';
+import { DB } from '../../../db/in-memory.db';
 
 export const TestingRepo = {
   removeAll: () => {

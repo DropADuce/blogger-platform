@@ -12,8 +12,7 @@ export const basicAuthMiddleware = (req: Request, res: Response, next: NextFunct
     const [login, password] = atob(credentials64 ?? '').split(':');
 
     if (token !== TOKEN || login !== LOGIN || password !== PASSWORD) throw new Error();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_: unknown) {
+  } catch {
     return res.sendStatus(HTTP_STATUS.UNAUTHORIZED);
   }
 

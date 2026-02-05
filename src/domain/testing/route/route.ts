@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { TestingRepo } from '../../../repositories/testing.repo';
+import { TestingRepo } from '../repository/testing.repo';
 import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
 
 export const router = Router();
