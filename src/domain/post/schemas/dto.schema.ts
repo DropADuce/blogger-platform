@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MongoIdSchema } from '../../../db/mongo/mongo-id.schema';
 
 export const DtoSchema = z.object({
   title: z
@@ -16,7 +17,7 @@ export const DtoSchema = z.object({
     .trim()
     .nonempty('Поле должно быть заполнено')
     .max(1_000, 'Максимальная длинна - 1_000 символов'),
-  blogId: z.string().trim().nonempty('Поле должно быть заполнено'),
+  blogId: MongoIdSchema.nonempty('Поле должно быть заполнено')
 });
 
 export type PostDTO = z.infer<typeof DtoSchema>;

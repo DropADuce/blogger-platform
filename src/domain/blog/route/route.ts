@@ -7,10 +7,12 @@ import { postBlogService } from '../services/post-blog.service';
 import { updateBlogService } from '../services/update-blog.service';
 import { deleteBlogService } from '../services/delete-blog.service';
 import { getBlogService } from '../services/get-blog-service';
+import { idValidationMiddleware } from '../../../core/middlewares/id-validaton-middleware';
+import { MongoIdSchema } from '../../../db/mongo/mongo-id.schema';
 
 export const router = Router()
   .get('/', getBlogsService)
-  .get('/:id', getBlogService)
+  .get('/:id', idValidationMiddleware(MongoIdSchema), getBlogService)
   .post(
     '/',
     basicAuthMiddleware,
@@ -20,7 +22,13 @@ export const router = Router()
   .put(
     '/:id',
     basicAuthMiddleware,
+    idValidationMiddleware(MongoIdSchema),
     dtoValidationMiddleware(DtoSchema),
     updateBlogService
   )
-  .delete('/:id', basicAuthMiddleware, deleteBlogService);
+  .delete(
+    '/:id',
+    basicAuthMiddleware,
+    idValidationMiddleware(MongoIdSchema),
+    deleteBlogService
+  );

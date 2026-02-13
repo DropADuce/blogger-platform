@@ -1,32 +1,15 @@
-import { DB } from '../../../db/in-memory.db';
+import { posts } from '../../../db/mongo/mongo.db';
+import { ClientSession, ObjectId } from 'mongodb';
 import { IPost } from '../types/post.types';
 
 export const PostsRepo = {
-  getAll: () => DB.posts,
-
-  findByID: (id: string) => DB.posts.find((post: IPost) => post.id === id),
-
-  create: (post: IPost) => {
-    DB.posts.push(post);
-
-    return post;
-  },
-
-  replace: (post: IPost) => {
-    DB.posts = DB.posts.map((currentPost) => {
-      if (post.id === currentPost.id) return post;
-
-      return currentPost;
-    });
-  },
-
-  remove: (id: string) => {
-    const postIDX = DB.posts.findIndex((post) => post.id === id);
-
-    if (postIDX === -1) return false;
-
-    DB.posts.splice(postIDX, 1);
-
-    return true;
-  },
+  getAll: async () => await posts.find().toArray(),
+  findByID: async (id: ObjectId) => await posts.findOne({ _id: id }),
+  create: async (post: IPost) => await posts.insertOne(post),
+  replace: async (id: ObjectId, post: Partial<IPost>) =>
+    await posts.updateOne({ _id: id }, { $set: post }),
+  remove: async (id: ObjectId) => await posts.deleteOne({ _id: id }),
+  removeAll: async () => await posts.deleteMany({}),
+  removeAllByBlog: async (id: string, session?: ClientSession) =>
+    await posts.deleteMany({ blogId: id }, { ...session }),
 };

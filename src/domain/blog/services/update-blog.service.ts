@@ -2,21 +2,19 @@ import { Request, Response } from 'express';
 import { BlogsRepo } from '../repository/blogs.repo';
 import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
 import { BlogDTO } from '../schemas/dto.schema';
-import { IBlog } from '../types/blog.types';
+import { createId } from '../../../core/lib/create-id';
 
-export const updateBlogService = (
+export const updateBlogService = async (
   req: Request<{ id: string }, BlogDTO>,
   res: Response
 ) => {
-  const id = req.params.id;
+  try {
+    const result = await BlogsRepo.replace(createId(req.params.id), req.body);
 
-  const blog = BlogsRepo.findByID(id);
-
-  if (!blog) return res.sendStatus(HTTP_STATUS.NOT_FOUND);
-
-  const newBlog: IBlog = { ...blog, ...req.body };
-
-  BlogsRepo.replace(newBlog);
-
-  return res.sendStatus(HTTP_STATUS.NO_CONTENT);
+    return result.matchedCount
+      ? res.status(HTTP_STATUS.NO_CONTENT).send(req.body)
+      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
+  } catch {
+    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+  }
 };

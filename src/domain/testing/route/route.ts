@@ -1,11 +1,6 @@
-import { Request, Response, Router } from 'express';
-import { TestingRepo } from '../repository/testing.repo';
-import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
+import { Router } from 'express';
+import { removeAllService } from '../services/testing.service';
 
 export const router = Router();
 
-router.delete('/all-data', (_: Request, res: Response) => {
-  TestingRepo.removeAll();
-
-  return res.sendStatus(HTTP_STATUS.NO_CONTENT)
-})
+router.delete('/all-data', removeAllService)

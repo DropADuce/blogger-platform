@@ -8,5 +8,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
     },
+    pool: 'forks',
+    isolate: false,
+    fileParallelism: false,
   },
 });

@@ -1,9 +1,9 @@
 import express from 'express';
 import request from 'supertest';
 import { HTTP_STATUS } from '../src/core/constants/http-statuses.constants';
-import { setupApp } from '../src/setup-app';
 import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
-import { beforeEach, expect } from 'vitest';
+import { beforeAll, beforeEach, expect } from 'vitest';
+import { startApp } from '../src/app';
 
 const CORRECT_BLOG_DTO: BlogDTO = {
   name: 'Имя блога',
@@ -11,13 +11,15 @@ const CORRECT_BLOG_DTO: BlogDTO = {
   websiteUrl: 'https://www.google.com/',
 };
 
-describe('/blogs', () => {
+describe('/blogs', async () => {
   const app = express();
 
-  setupApp(app);
+  beforeAll(async () => {
+    await startApp(app);
+  })
 
-  beforeEach(() => {
-    request(app).delete('/testing/all-data');
+  beforeEach(async () => {
+    await request(app).delete('/testing/all-data');
   });
 
   it('GET /blogs - пока пусто вернет 200 и пустой массив', async () => {
@@ -132,19 +134,19 @@ describe('/blogs', () => {
       .auth('admin', 'qwerty')
       .send(CORRECT_BLOG_DTO);
 
-    const updatedPost = { ...response.body, title: 'Другой заголовок' };
+    const updatedBlog = { ...response.body, name: 'Другой заг' };
 
     await request(app)
       .put(`/blogs/${response.body.id}`)
       .auth('admin', 'qwerty')
-      .send(updatedPost)
+      .send(updatedBlog)
       .expect(HTTP_STATUS.NO_CONTENT);
 
     const blog = await request(app)
       .get(`/blogs/${response.body.id}`)
       .expect(HTTP_STATUS.OK);
 
-    expect(blog.body).toMatchObject(updatedPost);
+    expect(blog.body).toMatchObject(updatedBlog);
   });
 
   it('DELETE /blog/:id Без авторизации - 401', async () => {

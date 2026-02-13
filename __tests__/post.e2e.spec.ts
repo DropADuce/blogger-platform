@@ -1,9 +1,10 @@
 import express from 'express';
 import request from 'supertest';
 import { HTTP_STATUS } from '../src/core/constants/http-statuses.constants';
-import { setupApp } from '../src/setup-app';
+import { startApp } from '../src/app';
 import { beforeEach, expect } from 'vitest';
 import { PostDTO } from '../src/domain/post/schemas/dto.schema';
+import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
 
 const CORRECT_POST_DTO: PostDTO = {
   title: 'Имя поста',
@@ -12,13 +13,19 @@ const CORRECT_POST_DTO: PostDTO = {
   blogId: 'blog id',
 };
 
-describe('/posts', () => {
+const CORRECT_BLOG_DTO: BlogDTO = {
+  name: 'Имя блога',
+  description: 'Какое-то описание для блога',
+  websiteUrl: 'https://www.google.com/',
+};
+
+describe('/posts', async () => {
   const app = express();
 
-  setupApp(app);
+  await startApp(app);
 
-  beforeEach(() => {
-    request(app).delete('/testing/all-data');
+  beforeEach(async () => {
+    await request(app).delete('/testing/all-data');
   });
 
   it('GET /posts - пока пусто вернет 200 и пустой массив', async () => {
@@ -29,10 +36,15 @@ describe('/posts', () => {
   });
 
   it('GET /posts возвращает список постов', async () => {
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
     const newPost = await request(app)
       .post('/posts')
       .auth('admin', 'qwerty')
-      .send(CORRECT_POST_DTO)
+      .send({ ...CORRECT_POST_DTO, blogId: blog.body.id })
       .expect(HTTP_STATUS.CREATED);
 
     const response = await request(app).get('/posts').expect(HTTP_STATUS.OK);
@@ -45,10 +57,15 @@ describe('/posts', () => {
   });
 
   it('GET /posts/:id возвращает 200 и запрашиваемый пост ', async () => {
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
     const newPost = await request(app)
       .post('/posts')
       .auth('admin', 'qwerty')
-      .send(CORRECT_POST_DTO)
+      .send({ ...CORRECT_POST_DTO, blogId: blog.body.id })
       .expect(HTTP_STATUS.CREATED);
 
     const response = await request(app)
@@ -63,10 +80,15 @@ describe('/posts', () => {
   });
 
   it('POST /posts создает пост', async () => {
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
     await request(app)
       .post('/posts')
       .auth('admin', 'qwerty')
-      .send(CORRECT_POST_DTO)
+      .send({ ...CORRECT_POST_DTO, blogId: blog.body.id })
       .expect(HTTP_STATUS.CREATED);
   });
 
@@ -115,10 +137,15 @@ describe('/posts', () => {
   });
 
   it('PUT /posts/:id Обновляет пост, получает 204', async () => {
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
     const response = await request(app)
       .post('/posts')
       .auth('admin', 'qwerty')
-      .send(CORRECT_POST_DTO);
+      .send({ ...CORRECT_POST_DTO, blogId: blog.body.id });
 
     const updatedPost = { ...response.body, title: 'Другой заголовок' };
 
@@ -136,7 +163,14 @@ describe('/posts', () => {
   });
 
   it('DELETE /post/:id Без авторизации - 401', async () => {
-    await request(app).delete('/posts/1').expect(HTTP_STATUS.UNAUTHORIZED);
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
+    await request(app)
+      .delete(`/posts/${blog.body.id}`)
+      .expect(HTTP_STATUS.UNAUTHORIZED);
   });
 
   it('DELETE /post/:id По не верному id - 404', async () => {
@@ -147,10 +181,15 @@ describe('/posts', () => {
   });
 
   it('DELETE /post/:id Когда происходит - 204', async () => {
+    const blog = await request(app)
+      .post('/blogs')
+      .auth('admin', 'qwerty')
+      .send(CORRECT_BLOG_DTO);
+
     const post = await request(app)
       .post('/posts')
       .auth('admin', 'qwerty')
-      .send(CORRECT_POST_DTO)
+      .send({ ...CORRECT_POST_DTO, blogId: blog.body.id })
       .expect(HTTP_STATUS.CREATED);
 
     await request(app)

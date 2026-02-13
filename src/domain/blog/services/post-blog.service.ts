@@ -1,15 +1,29 @@
 import { Request, Response } from 'express';
 import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
 import { BlogsRepo } from '../repository/blogs.repo';
-import { IBlog } from '../types/blog.types';
-import { createId } from '../../../core/lib/create-id';
 import { BlogDTO } from '../schemas/dto.schema';
+import { IBlog } from '../types/blog.types';
+import { mapMongoIdToId } from '../../../core/lib/map-mongo-id-to-id';
 
-export const postBlogService = (
+export const postBlogService = async (
   req: Request<never, never, BlogDTO>,
   res: Response
 ) => {
-  const blog: IBlog = { ...req.body, id: createId() };
+  try {
+    const blog: IBlog = {
+      ...req.body,
+      isMembership: false,
+      createdAt: new Date().toISOString(),
+    };
 
-  return res.status(HTTP_STATUS.CREATED).send(BlogsRepo.create(blog));
+    const result = await BlogsRepo.create(blog);
+
+    const newBlog = await BlogsRepo.findByID(result.insertedId);
+
+    return newBlog
+      ? res.status(HTTP_STATUS.CREATED).send(mapMongoIdToId(newBlog))
+      : res.sendStatus(HTTP_STATUS.BAD_REQUEST);
+  } catch {
+    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+  }
 };
