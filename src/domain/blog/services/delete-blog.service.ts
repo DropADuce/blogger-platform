@@ -15,7 +15,7 @@ export const deleteBlogService = async (
     const result = await session.withTransaction(async () => {
       const deleteResult = await BlogsRepo.remove(createId(req.params.id), session);
 
-      if (!deleteResult) return false;
+      if (!deleteResult.deletedCount) return false;
 
       await PostsRepo.removeAllByBlog(req.params.id, session);
 
