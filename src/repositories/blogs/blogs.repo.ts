@@ -16,13 +16,11 @@ export const BlogsRepo = {
       .limit(params.pagination.count)
       .toArray(),
   findByID: async (id: ObjectId) => await blogs.findOne({ _id: id }),
-  findManyByID: async (ids: Array<ObjectId>) =>
-    await blogs.find({ _id: { $in: ids } }).toArray(),
   create: async (blog: IBlog) => await blogs.insertOne(blog),
-  replace: async (id: ObjectId, blog: BlogDTO) =>
-    await blogs.updateOne({ _id: id }, { $set: blog }),
+  replace: async (id: ObjectId, blog: BlogDTO, session?: ClientSession) =>
+    await blogs.updateOne({ _id: id }, { $set: blog }, session),
   remove: async (id: ObjectId, session?: ClientSession) =>
-    await blogs.deleteOne({ _id: id }, { ...session }),
+    await blogs.deleteOne({ _id: id }, session),
   removeAll: async () => await blogs.deleteMany({}),
   getCount: async (filter: Filter<IBlog>) => await blogs.countDocuments(filter),
 };

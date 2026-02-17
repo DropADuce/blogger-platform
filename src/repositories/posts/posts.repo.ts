@@ -3,16 +3,16 @@ import { ClientSession, Filter, ObjectId, Sort } from 'mongodb';
 import { IPost } from '../../domain/post/types/post.types';
 
 export const PostsRepo = {
-  getAll: async (params: {
+  getAll: async (params: Partial<{
     sortParams: Sort;
     pagination: { skip: number; count: number };
     filter?: Filter<IPost> | undefined
-  }) =>
+  }>) =>
     await posts
-      .find(params.filter)
-      .sort(params.sortParams)
-      .skip(params.pagination.skip)
-      .limit(params.pagination.count)
+      .find(params.filter ?? {})
+      .sort(params.sortParams ?? {})
+      .skip(params.pagination?.skip ?? 0)
+      .limit(params.pagination?.count ?? -1)
       .toArray(),
   findByID: async (id: ObjectId) => await posts.findOne({ _id: id }),
   create: async (post: IPost) => await posts.insertOne(post),

@@ -49,11 +49,32 @@ const createBlog = async (blog: BlogDTO): Promise<IBlog | null> => {
 };
 
 const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
-  const updateResult = await BlogsRepo.replace(createId(id), blog);
+  const session = client.startSession();
 
-  if (updateResult.matchedCount) return await findBlogById(id);
+  try {
+    const [result, posts] = await Promise.all([
+      BlogsRepo.replace(createId(id), blog, session),
+      PostsRepo.getAll({ filter: { blogId: id } }),
+    ]);
 
-  return null;
+    if (!result.matchedCount) {
+      await session.endSession();
+
+      return null;
+    }
+
+    await Promise.all(
+      posts.map((post) => PostsRepo.replace(post._id, { blogName: blog.name }))
+    );
+
+    await session.endSession();
+
+    return await findBlogById(id)
+  } catch (error: unknown) {
+    await session.endSession();
+
+    throw error;
+  }
 };
 
 const deleteBlog = async (id: string): Promise<boolean> => {

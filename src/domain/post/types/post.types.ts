@@ -3,9 +3,6 @@ export interface IPost {
   shortDescription: string;
   content: string;
   blogId: string;
-  createdAt: string;
-}
-
-export interface IPostView extends IPost {
   blogName: string;
+  createdAt: string;
 }
