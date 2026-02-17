@@ -1,10 +1,10 @@
 import express, { Express } from 'express';
-import { router as blogsRouter } from './domain/blog/route/route';
-import { router as postsRouter } from './domain/post/route/route';
-import { router as testingRouter } from './domain/testing/route/route';
-import { runDB } from './db/mongo/mongo.db';
-import { noop } from './core/lib/noop';
-import { SETTINGS } from './core/settings/setting';
+import { router as blogsRouter } from './api/blog/route/route';
+import { router as postsRouter } from './api/post/route/route';
+import { router as testingRouter } from '../domain/testing/route/route';
+import { runDB } from '../db/mongo/mongo.db';
+import { noop } from '../core/lib/noop';
+import { SETTINGS } from '../core/settings/setting';
 
 const setupApp = (app: Express) => {
   app.use(express.json());

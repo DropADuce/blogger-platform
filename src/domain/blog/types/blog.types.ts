@@ -5,3 +5,7 @@ export interface IBlog {
   isMembership?: false;
   createdAt: string;
 }
+
+export interface IBlogViewModel extends IBlog {
+  id: string;
+}

@@ -6,6 +6,6 @@ export interface IPost {
   createdAt: string;
 }
 
-export interface IPostWithBlogName extends IPost {
+export interface IPostView extends IPost {
   blogName: string;
 }

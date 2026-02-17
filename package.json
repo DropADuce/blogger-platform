@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"yarn tsc -w\" \"yarn nodemon --inspect ./dist/index.js\"",
+    "dev": "concurrently \"yarn tsc -p tsconfig.build.json -w\" \"yarn nodemon --inspect ./dist/index.js\"",
     "test": "vitest"
   },
   "private": true,
@@ -15,7 +15,7 @@
     "dotenv": "17.2.4",
     "express": "5.2.1",
     "mongodb": "7.1.0",
-    "rxjs": "^7.8.2",
+    "rxjs": "7.8.2",
     "typescript-eslint": "8.54.0",
     "zod": "4.3.6"
   },

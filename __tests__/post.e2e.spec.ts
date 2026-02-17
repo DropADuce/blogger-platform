@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { HTTP_STATUS } from '../src/core/constants/http-statuses.constants';
-import { startApp } from '../src/app';
+import { startApp } from '../src/app/app';
 import { beforeEach, expect } from 'vitest';
 import { PostDTO } from '../src/domain/post/schemas/dto.schema';
 import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
@@ -31,8 +31,8 @@ describe('/posts', async () => {
   it('GET /posts - пока пусто вернет 200 и пустой массив', async () => {
     const response = await request(app).get('/posts').expect(HTTP_STATUS.OK);
 
-    expect(response.body).toBeInstanceOf(Array);
-    expect(response.body.length).toBe(0);
+    expect(response.body.items).toBeInstanceOf(Array);
+    expect(response.body.items.length).toBe(0);
   });
 
   it('GET /posts возвращает список постов', async () => {
@@ -49,7 +49,9 @@ describe('/posts', async () => {
 
     const response = await request(app).get('/posts').expect(HTTP_STATUS.OK);
 
-    expect(response.body).toContainEqual(expect.objectContaining(newPost.body));
+    expect(response.body.items).toContainEqual(
+      expect.objectContaining(newPost.body)
+    );
   });
 
   it('GET /posts/:id возвращает 404, если не существует', async () => {

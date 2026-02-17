@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { removeAllService } from '../services/testing.service';
+import { RouteHandler } from './route.handler';
 
 export const router = Router();
 
-router.delete('/all-data', removeAllService)
+router.delete('/all-data', RouteHandler.clearDatabase)

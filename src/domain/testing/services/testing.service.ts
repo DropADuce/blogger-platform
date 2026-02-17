@@ -1,10 +1,10 @@
-import { Response } from 'express';
-import { BlogsRepo } from '../../blog/repository/blogs.repo';
-import { PostsRepo } from '../../post/repository/posts.repo';
-import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
+import { BlogsRepo } from '../../../repositories/blogs/blogs.repo';
+import { PostsRepo } from '../../../repositories/posts/posts.repo';
 
-export const removeAllService = async (_: unknown, res: Response) => {
-  await Promise.allSettled([BlogsRepo.removeAll(), PostsRepo.removeAll()]);
+const clearDatabase = async (): Promise<void> => {
+  await Promise.allSettled([PostsRepo.removeAll(), BlogsRepo.removeAll()]);
+};
 
-  res.sendStatus(HTTP_STATUS.NO_CONTENT);
-}
+export const TestingService = {
+  clearDatabase,
+};
