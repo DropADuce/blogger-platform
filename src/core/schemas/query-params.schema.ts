@@ -11,7 +11,7 @@ const FilterByFieldSchema = z.object({
 });
 
 const SortByFieldSchema = z.object({
-  sortBy: z.string().toLowerCase().optional().default(SORT_FIELD_FALLBACK),
+  sortBy: z.string().optional().default(SORT_FIELD_FALLBACK),
   sortDirection: z
     .enum(['asc', 'desc'])
     .optional()

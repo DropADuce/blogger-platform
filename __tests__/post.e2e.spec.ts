@@ -5,6 +5,8 @@ import { startApp } from '../src/app/app';
 import { beforeEach, expect } from 'vitest';
 import { PostDTO } from '../src/domain/post/schemas/dto.schema';
 import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
+import { BlogTestFactory } from './utils/blog.factory';
+import { IPost } from '../src/domain/post/types/post.types';
 
 const CORRECT_POST_DTO: PostDTO = {
   title: 'Имя поста',
@@ -52,6 +54,38 @@ describe('/posts', async () => {
     expect(response.body.items).toContainEqual(
       expect.objectContaining(newPost.body)
     );
+  });
+
+  it('Посты сортируются корректно', async () => {
+    const blogA = await BlogTestFactory.create(app, { name: 'B' });
+    const blogB = await BlogTestFactory.create(app, { name: 'C' });
+    const blogC = await BlogTestFactory.create(app, { name: 'A' });
+
+    await request(app)
+      .post('/posts')
+      .auth('admin', 'qwerty')
+      .send({ ...CORRECT_POST_DTO, blogId: blogA.id })
+      .expect(HTTP_STATUS.CREATED);
+
+    await request(app)
+      .post('/posts')
+      .auth('admin', 'qwerty')
+      .send({ ...CORRECT_POST_DTO, blogId: blogB.id })
+      .expect(HTTP_STATUS.CREATED);
+
+    await request(app)
+      .post('/posts')
+      .auth('admin', 'qwerty')
+      .send({ ...CORRECT_POST_DTO, blogId: blogC.id })
+      .expect(HTTP_STATUS.CREATED);
+
+    const response = await request(app)
+      .get('/posts?pageSize=9&pageNumber=1&sortBy=blogName&sortDirection=asc')
+      .expect(HTTP_STATUS.OK);
+
+    const names = response.body.items.map((item: IPost) => item.blogName);
+
+    expect(names).toEqual(['A', 'B', 'C']);
   });
 
   it('GET /posts/:id возвращает 404, если не существует', async () => {
