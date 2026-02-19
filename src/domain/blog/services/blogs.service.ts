@@ -52,28 +52,27 @@ const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
   const session = client.startSession();
 
   try {
-    const [result, posts] = await Promise.all([
-      BlogsRepo.replace(createId(id), blog, session),
-      PostsRepo.getAll({ filter: { blogId: id } }),
-    ]);
+    const result = await session.withTransaction(async () => {
+      const result = await BlogsRepo.replace(createId(id), blog, session);
 
-    if (!result.matchedCount) {
-      await session.endSession();
+      if (!result.matchedCount) {
+        return false;
+      }
 
-      return null;
-    }
+      await PostsRepo.replaceMany(
+        { blogId: id },
+        { $set: { blogName: blog.name } },
+        session
+      );
 
-    await Promise.all(
-      posts.map((post) => PostsRepo.replace(post._id, { blogName: blog.name }))
-    );
+      return true;
+    });
 
+    if (result) return await findBlogById(id);
+
+    return null;
+  } finally {
     await session.endSession();
-
-    return await findBlogById(id)
-  } catch (error: unknown) {
-    await session.endSession();
-
-    throw error;
   }
 };
 
