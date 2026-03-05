@@ -5,38 +5,42 @@ import { createId } from '../../../core/lib/create-id';
 import { BlogDTO } from '../schemas/dto.schema';
 import { client } from '../../../db/mongo/mongo.db';
 import { PostsRepo } from '../../../repositories/posts/posts.repo';
-import { WithFilterAndSortAndPaginationSchema } from '../../../core/schemas/query-params.schema';
 import { WithPaginationData } from '../../../core/types/pagination.types';
-import { buildQuery } from '../../../core/lib/build-mongo-query';
+import { buildFilter, buildQuery } from '../../../core/lib/build-mongo-query';
 import { createWithPaginationResult } from '../../../core/lib/create-with-paginatoin-result';
+import { NotFoundError } from '../../../core/errors/not-found.error';
+import { WithFilterAndSortAndPaginationSchema } from '../schemas/query-params.schema';
 
 const findBlogs = async (
   queryParams: unknown
 ): Promise<WithPaginationData<IBlogViewModel>> => {
   const params = WithFilterAndSortAndPaginationSchema.parse(queryParams);
 
-  const query = buildQuery(params, 'name');
-
-  const [blogs, count] = await Promise.all([
-    BlogsRepo.getAll(query),
-    BlogsRepo.getCount(query.filter),
-  ]);
+  const { blogs, pagesCount } = await BlogsRepo.getAll(
+    buildQuery(params, buildFilter([['name', params.searchNameTerm]]))
+  );
 
   return createWithPaginationResult({
     pageNumber: params.pageNumber,
     pageSize: params.pageSize,
     items: blogs.map(mapMongoIdToId),
-    count,
+    count: pagesCount,
   });
 };
 
-const findBlogById = async (id: string): Promise<IBlog | null> => {
+const findBlogById = async (id: string): Promise<IBlog> => {
   const blog = await BlogsRepo.findByID(createId(id));
 
-  return blog ? mapMongoIdToId(blog) : blog;
+  if (!blog)
+    throw new NotFoundError(
+      `В репозитории нет блога с id ${id}`,
+      'findBlogById'
+    );
+
+  return mapMongoIdToId(blog);
 };
 
-const createBlog = async (blog: BlogDTO): Promise<IBlog | null> => {
+const createBlog = async (blog: BlogDTO): Promise<IBlog> => {
   const newBlog: IBlog = {
     ...blog,
     isMembership: false,
@@ -52,11 +56,14 @@ const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
   const session = client.startSession();
 
   try {
-    const result = await session.withTransaction(async () => {
+    await session.withTransaction(async () => {
       const result = await BlogsRepo.replace(createId(id), blog, session);
 
       if (!result.matchedCount) {
-        return false;
+        throw new NotFoundError(
+          `В репозитории нет блога с id ${id}`,
+          'updateBlog'
+        );
       }
 
       await PostsRepo.replaceMany(
@@ -64,13 +71,9 @@ const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
         { $set: { blogName: blog.name } },
         session
       );
-
-      return true;
     });
 
-    if (result) return await findBlogById(id);
-
-    return null;
+    return await findBlogById(id);
   } finally {
     await session.endSession();
   }
@@ -80,7 +83,7 @@ const deleteBlog = async (id: string): Promise<boolean> => {
   const session = client.startSession();
 
   try {
-    const deleteResult = await session.withTransaction(async () => {
+    return await session.withTransaction(async () => {
       const blogDeleteResult = await BlogsRepo.remove(createId(id), session);
 
       if (!blogDeleteResult.deletedCount) return false;
@@ -89,14 +92,8 @@ const deleteBlog = async (id: string): Promise<boolean> => {
 
       return true;
     });
-
+  } finally {
     await session.endSession();
-
-    return deleteResult;
-  } catch (error: unknown) {
-    await session.endSession();
-
-    throw error;
   }
 };
 

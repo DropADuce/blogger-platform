@@ -8,13 +8,19 @@ export const BlogsRepo = {
     filter: Filter<IBlog>;
     sortParams: Sort;
     pagination: { skip: number; count: number };
-  }) =>
-    await blogs
-      .find(params.filter)
-      .sort(params.sortParams)
-      .skip(params.pagination.skip)
-      .limit(params.pagination.count)
-      .toArray(),
+  }) => {
+    const [blogsResult, pagesCount] = await Promise.all([
+      await blogs
+        .find(params.filter)
+        .sort(params.sortParams)
+        .skip(params.pagination.skip)
+        .limit(params.pagination.count)
+        .toArray(),
+      await blogs.countDocuments(params.filter),
+    ]);
+
+    return { blogs: blogsResult, pagesCount };
+  },
   findByID: async (id: ObjectId) => await blogs.findOne({ _id: id }),
   create: async (blog: IBlog) => await blogs.insertOne(blog),
   replace: async (id: ObjectId, blog: BlogDTO, session?: ClientSession) =>

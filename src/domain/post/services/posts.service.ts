@@ -9,6 +9,7 @@ import { buildQuery } from '../../../core/lib/build-mongo-query';
 import { Filter } from 'mongodb';
 import { createWithPaginationResult } from '../../../core/lib/create-with-paginatoin-result';
 import { WithPaginationData } from '../../../core/types/pagination.types';
+import { NotFoundError } from '../../../core/errors/not-found.error';
 
 const findPosts = async (
   queryParams: unknown,
@@ -34,7 +35,11 @@ const findPosts = async (
 const findPostsByBlogID = async (id: string, queryParams: unknown) => {
   const blogs = await BlogsRepo.findByID(createId(id));
 
-  if (!blogs) return null;
+  if (!blogs)
+    throw new NotFoundError(
+      `Не удалось найти блог с id ${id}`,
+      'findPostsByBlogID'
+    );
 
   return await findPosts(queryParams, { blogId: id });
 };

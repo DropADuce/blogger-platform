@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
-import { TestingService } from '../services/testing.service';
+import { TestingService } from '../../../domain/testing/services/testing.service';
 
 const clearDatabase = async (_: Request, res: Response) => {
   try {

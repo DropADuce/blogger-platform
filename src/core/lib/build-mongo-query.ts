@@ -1,32 +1,23 @@
+import { WithSortAndPagination } from '../schemas/query-params.schema';
 import { Filter, Sort } from 'mongodb';
-import {
-  WithFilterAndSortAndPagination,
-  WithSortAndPagination,
-} from '../schemas/query-params.schema';
+import { IQueryParams } from '../types/query-params.types';
 
-interface IQueryResult {
-  sortParams: Sort;
-  pagination: { skip: number; count: number };
-}
+export const buildFilter = <T extends object>(entries: Array<[keyof T, string | undefined]>): Filter<T> => {
+  const filters: Filter<T> = {};
 
-interface IQueryResultWithFilter<T> extends IQueryResult {
-  filter: Filter<T>;
-}
+  entries.forEach(([field, value]) => {
+    if (value) {
+      filters[field as keyof Filter<T>] = { $regex: value, $options: 'i' };
+    }
+  });
 
-const isHaveFilter = (
-  parms: WithSortAndPagination | WithFilterAndSortAndPagination
-): parms is WithFilterAndSortAndPagination => 'searchNameTerm' in parms;
+  return filters;
+};
 
-export function buildQuery(params: WithSortAndPagination): IQueryResult;
-export function buildQuery<T extends object>(
-  params: WithFilterAndSortAndPagination,
-  searchField: keyof T
-): IQueryResultWithFilter<T>;
-
-export function buildQuery<T extends object>(
-  params: WithSortAndPagination | WithFilterAndSortAndPagination,
-  searchField?: keyof T
-): IQueryResult | IQueryResultWithFilter<T> {
+export const buildQuery = <T extends object>(
+  params: WithSortAndPagination,
+  filter: Filter<T> = {},
+): IQueryParams<T> => {
   const sortParams: Sort = {
     [params.sortBy]: params.sortDirection === 'asc' ? 1 : -1,
   };
@@ -36,10 +27,6 @@ export function buildQuery<T extends object>(
   return {
     sortParams,
     pagination: { skip, count: params.pageSize },
-    ...(isHaveFilter(params) && !!searchField && {
-      filter: {
-        [searchField]: { $regex: params.searchNameTerm, $options: 'i' },
-      },
-    }),
+    filter,
   };
-}
+};

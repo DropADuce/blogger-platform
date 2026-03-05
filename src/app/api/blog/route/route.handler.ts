@@ -3,107 +3,75 @@ import { HTTP_STATUS } from '../../../../core/constants/http-statuses.constants'
 import { BlogsService } from '../../../../domain/blog/services/blogs.service';
 import { PostsService } from '../../../../domain/post/services/posts.service';
 import { BlogDTO } from '../../../../domain/blog/schemas/dto.schema';
-import { WithFilterAndSortAndPagination } from '../../../../core/schemas/query-params.schema';
 import { PostWithoutBlogIdDTO } from '../../../../domain/post/schemas/dto.schema';
+import { withTryCatch } from '../../../../core/lib/with-try-catch';
+import { WithFilterAndSortAndPagination } from '../../../../domain/blog/schemas/query-params.schema';
 
-const findBlogs = async (
-  req: Request<never, never, never, WithFilterAndSortAndPagination>,
-  res: Response
-) => {
-  try {
+const findBlogs = withTryCatch(
+  async (
+    req: Request<unknown, unknown, unknown, WithFilterAndSortAndPagination>,
+    res: Response
+  ) => {
     const blogs = await BlogsService.findBlogs(req.query);
 
     res.send(blogs);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
   }
-};
+);
 
-const findBlogById = async (req: Request<{ id: string }>, res: Response) => {
-  try {
+const findBlogById = withTryCatch(
+  async (req: Request<{ id: string }>, res: Response) => {
     const blog = await BlogsService.findBlogById(req.params.id);
 
-    return blog ? res.send(blog) : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+    return res.send(blog);
   }
-};
+);
 
-const findPostsByBlogId = async (
-  req: Request<{ id: string }>,
-  res: Response
-) => {
-  try {
-    const blogs = await PostsService.findPostsByBlogID(
+const findPostsByBlogId = withTryCatch(
+  async (req: Request<{ id: string }>, res: Response) => {
+    const posts = await PostsService.findPostsByBlogID(
       req.params.id,
       req.query
     );
 
-    return blogs ? res.send(blogs) : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.NOT_FOUND);
+    return res.send(posts);
   }
-};
+);
 
-const createBlog = async (
-  req: Request<never, never, BlogDTO>,
-  res: Response
-) => {
-  try {
+const createBlog = withTryCatch(
+  async (req: Request<unknown, unknown, BlogDTO>, res) => {
     const blog = await BlogsService.createBlog(req.body);
 
-    return blog
-      ? res.status(HTTP_STATUS.CREATED).send(blog)
-      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+    return res.status(HTTP_STATUS.CREATED).send(blog);
   }
-};
+);
 
-const createPostByBlogId = async (
-  req: Request<{ id: string }, never, PostWithoutBlogIdDTO>,
-  res: Response
-) => {
-  try {
+const createPostByBlogId = withTryCatch(
+  async (
+    req: Request<{ id: string }, unknown, PostWithoutBlogIdDTO>,
+    res: Response
+  ) => {
     const post = await PostsService.createPost({
       ...req.body,
       blogId: req.params.id,
     });
 
-    return post
-      ? res.status(HTTP_STATUS.CREATED).send(post)
-      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+    return res.status(HTTP_STATUS.CREATED).send(post);
   }
-};
+);
 
-const updateBlog = async (
-  req: Request<{ id: string }, never, BlogDTO>,
-  res: Response
-) => {
-  try {
+const updateBlog = withTryCatch(
+  async (req: Request<{ id: string }, unknown, BlogDTO>, res: Response) => {
     const blog = await BlogsService.updateBlog(req.params.id, req.body);
 
-    return blog
-      ? res.status(HTTP_STATUS.NO_CONTENT).send(blog)
-      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
+    return res.status(HTTP_STATUS.NO_CONTENT).send(blog);
   }
-};
+);
 
-const deleteBlog = async (req: Request<{ id: string }>, res: Response) => {
-  try {
-    const result = await BlogsService.deleteBlog(req.params.id);
+const deleteBlog = withTryCatch(async (req: Request<{ id: string }>, res: Response) => {
+    await BlogsService.deleteBlog(req.params.id);
 
-    return result
-      ? res.sendStatus(HTTP_STATUS.NO_CONTENT)
-      : res.sendStatus(HTTP_STATUS.NOT_FOUND);
-  } catch {
-    res.sendStatus(HTTP_STATUS.SERVER_ERROR);
-  }
-};
+    return res.sendStatus(HTTP_STATUS.NO_CONTENT)
+});
 
 export const RouteHandler = {
   findBlogs,
