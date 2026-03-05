@@ -23,7 +23,7 @@ export const usersQueryRepo = {
   }) => {
     const [foundedUsers, count] = await Promise.all([
       users
-        .find(params.filter)
+        .find({$or: [params.filter]})
         .sort(params.sortParams)
         .skip(params.pagination.skip)
         .limit(params.pagination.count)
