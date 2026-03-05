@@ -43,7 +43,7 @@ export const usersQueryRepo = {
         'usersQueryRepo.findByID'
       );
 
-    return mapMongoIdToId(user);
+    return mapUserToViewModel(user);
   },
   findByLoginOrEmail: async (loginOrEmail: string) =>
     await users.findOne({

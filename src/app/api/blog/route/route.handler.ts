@@ -121,7 +121,9 @@ const updateBlog = withTryCatch(
 
 const deleteBlog = withTryCatch(
   async (req: Request<{ id: string }>, res: Response) => {
-    await BlogsService.deleteBlog(req.params.id);
+    const blog = await blogsQueryRepo.findByID(req.params.id);
+
+    await BlogsService.deleteBlog(blog.id);
 
     return res.sendStatus(HTTP_STATUS.NO_CONTENT);
   }
