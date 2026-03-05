@@ -33,8 +33,6 @@ describe('/users', async () => {
         .auth('admin', 'qwerty')
         .expect(HTTP_STATUS.OK);
 
-      console.log(users, 'users');
-
       expect(users.body.items).toBeInstanceOf(Array);
       expect(users.body.items.length).toBe(2);
     });

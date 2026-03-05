@@ -4,7 +4,7 @@ import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
 import { createTestApp } from './utils/create-test-app';
 import { BlogTestFactory } from './utils/blog.factory';
 import { IBlogViewModel } from '../src/domain/blog/types/blog.types';
-import { PostWithoutBlogIdDTO } from '../src/domain/post/schemas/dto.schema';
+import { CreatePostDTO } from '../src/domain/post/schemas/dto.schema';
 
 const CORRECT_BLOG_DTO: BlogDTO = {
   name: 'Имя блога',
@@ -266,7 +266,7 @@ describe('/blogs', async () => {
     it('POST /blogs/:blogId - создает и возращает блог', async () => {
       const blog = await BlogTestFactory.create(app);
 
-      const post: PostWithoutBlogIdDTO = {
+      const post: CreatePostDTO = {
         title: 'Пост',
         shortDescription: 'Описание',
         content: 'Контент',

@@ -1,58 +1,24 @@
 import { BlogsRepo } from '../../../repositories/blogs/blogs.repo';
-import { mapMongoIdToId } from '../../../core/lib/map-mongo-id-to-id';
-import { IBlog, IBlogViewModel } from '../types/blog.types';
+import { IBlog } from '../types/blog.types';
 import { createId } from '../../../core/lib/create-id';
 import { BlogDTO } from '../schemas/dto.schema';
 import { client } from '../../../db/mongo/mongo.db';
 import { PostsRepo } from '../../../repositories/posts/posts.repo';
-import { WithPaginationData } from '../../../core/types/pagination.types';
-import { buildFilter, buildQuery } from '../../../core/lib/build-mongo-query';
-import { createWithPaginationResult } from '../../../core/lib/create-with-paginatoin-result';
 import { NotFoundError } from '../../../core/errors/not-found.error';
-import { WithFilterAndSortAndPaginationSchema } from '../schemas/query-params.schema';
 
-const findBlogs = async (
-  queryParams: unknown
-): Promise<WithPaginationData<IBlogViewModel>> => {
-  const params = WithFilterAndSortAndPaginationSchema.parse(queryParams);
-
-  const { blogs, pagesCount } = await BlogsRepo.getAll(
-    buildQuery(params, buildFilter([['name', params.searchNameTerm]]))
-  );
-
-  return createWithPaginationResult({
-    pageNumber: params.pageNumber,
-    pageSize: params.pageSize,
-    items: blogs.map(mapMongoIdToId),
-    count: pagesCount,
-  });
-};
-
-const findBlogById = async (id: string): Promise<IBlog> => {
-  const blog = await BlogsRepo.findByID(createId(id));
-
-  if (!blog)
-    throw new NotFoundError(
-      `В репозитории нет блога с id ${id}`,
-      'findBlogById'
-    );
-
-  return mapMongoIdToId(blog);
-};
-
-const createBlog = async (blog: BlogDTO): Promise<IBlog> => {
+const createBlog = async (blog: BlogDTO) => {
   const newBlog: IBlog = {
     ...blog,
     isMembership: false,
     createdAt: new Date().toISOString(),
   };
 
-  const createBlogResult = await BlogsRepo.create(newBlog);
+  const result = await BlogsRepo.create(newBlog);
 
-  return await findBlogById(createBlogResult.insertedId.toString());
+  return result.insertedId.toString();
 };
 
-const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
+const updateBlog = async (id: string, blog: BlogDTO) => {
   const session = client.startSession();
 
   try {
@@ -72,8 +38,6 @@ const updateBlog = async (id: string, blog: BlogDTO): Promise<IBlog | null> => {
         session
       );
     });
-
-    return await findBlogById(id);
   } finally {
     await session.endSession();
   }
@@ -98,8 +62,6 @@ const deleteBlog = async (id: string): Promise<boolean> => {
 };
 
 export const BlogsService = {
-  findBlogs,
-  findBlogById,
   createBlog,
   updateBlog,
   deleteBlog,

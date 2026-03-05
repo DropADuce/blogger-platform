@@ -5,7 +5,7 @@ import { DtoSchema } from '../../../../domain/blog/schemas/dto.schema';
 import { idValidationMiddleware } from '../../../../core/middlewares/id-validaton-middleware';
 import { MongoIdSchema } from '../../../../db/mongo/mongo-id.schema';
 import { RouteHandler } from './route.handler';
-import { CreatePostByBlogDTOSchema } from '../../../../domain/post/schemas/dto.schema';
+import { CreatePostDTOSchema } from '../../../../domain/post/schemas/dto.schema';
 
 export const router = Router()
   .get('/', RouteHandler.findBlogs)
@@ -25,7 +25,7 @@ export const router = Router()
     '/:id/posts',
     idValidationMiddleware(MongoIdSchema),
     basicAuthMiddleware,
-    dtoValidationMiddleware(CreatePostByBlogDTOSchema),
+    dtoValidationMiddleware(CreatePostDTOSchema),
     RouteHandler.createPostByBlogId
   )
   .put(

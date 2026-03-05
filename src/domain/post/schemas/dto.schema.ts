@@ -20,7 +20,7 @@ export const DtoSchema = z.object({
   blogId: MongoIdSchema.nonempty('Поле должно быть заполнено')
 });
 
-export const CreatePostByBlogDTOSchema = DtoSchema.omit({ blogId: true })
+export const CreatePostDTOSchema = DtoSchema.omit({ blogId: true })
 
 export type PostDTO = z.infer<typeof DtoSchema>;
-export type PostWithoutBlogIdDTO = z.infer<typeof CreatePostByBlogDTOSchema>;
+export type CreatePostDTO = z.infer<typeof CreatePostDTOSchema>;
