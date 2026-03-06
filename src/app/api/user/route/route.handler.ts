@@ -27,7 +27,7 @@ const getAll = withTryCatch(
         buildFilter([
           ['login', params.searchLoginTerm],
           ['email', params.searchEmailTerm],
-        ])
+        ], 'or')
       )
     );
 

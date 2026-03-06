@@ -10,8 +10,7 @@ interface IUserViewModel {
   createdAt: string;
 }
 
-const mapUserToViewModel = ({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+const mapUserToViewModel = ({ // eslint-disable-next-line @typescript-eslint/no-unused-vars
   password,
   ...user
 }: WithId<IUser>): IUserViewModel => mapMongoIdToId(user);
@@ -22,20 +21,9 @@ export const usersQueryRepo = {
     pagination: { skip: number; count: number };
     filter: Filter<IUser>;
   }) => {
-    const filter = params.filter;
-
-    const mongoFilter =
-      Object.keys(filter).length > 0
-        ? {
-            $or: Object.entries(filter).map(([key, value]) => ({
-              [key]: value,
-            })),
-          }
-        : {};
-
     const [foundedUsers, count] = await Promise.all([
       users
-        .find(mongoFilter)
+        .find(params.filter)
         .sort(params.sortParams)
         .skip(params.pagination.skip)
         .limit(params.pagination.count)
