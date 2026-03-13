@@ -37,8 +37,8 @@ const findBlogsByPostId = async (id: string, params: {
       .skip(params.pagination.skip)
       .limit(params.pagination.count)
       .toArray()
-      .then((items) => items.map(item => mapMongoIdToId(mapToComment(item)))),
-    comments.countDocuments(),
+      .then((items) => items.map((item) => mapMongoIdToId(mapToComment(item)))),
+    comments.countDocuments({ postId: id }),
   ]);
 
   return { comments: items, count };
