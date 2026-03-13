@@ -11,6 +11,10 @@ import {
 import { buildQuery } from '../../../../core/lib/build-mongo-query';
 import { createWithPaginationResult } from '../../../../core/lib/create-with-paginatoin-result';
 import { blogsQueryRepo } from '../../../../repositories/blogs/blogs.query-repo';
+import { usersQueryRepo } from '../../../../repositories/users/users.query-repo';
+import { commentsService } from '../../../../domain/comment/services/comment.service';
+import { CommentDTO } from '../../../../domain/comment/schemas/comment.schema';
+import { commentsQueryRepo } from '../../../../repositories/comments/comments.query-repo';
 
 const findPosts = withTryCatch(
   async (
@@ -79,10 +83,59 @@ const deletePost = async (req: Request<{ id: string }>, res: Response) => {
   }
 };
 
+const getComments = withTryCatch(
+  async (
+    req: Request<{ id: string }, unknown, unknown, Partial<WithSortAndPagination>>,
+    res: Response
+  ) => {
+    const postId = req.params.id;
+
+    const params = WithSortAndPaginationSchema.parse(req.query);
+
+    await postsQueryRepo.findByID(postId);
+
+    const { comments, count } = await commentsQueryRepo.findBlogsByPostId(
+      postId,
+      buildQuery(params)
+    );
+
+    return res.send(
+      createWithPaginationResult({
+        pageNumber: params.pageNumber,
+        pageSize: params.pageSize,
+        items: comments,
+        count,
+      })
+    );
+  }
+);
+
+const addComment = withTryCatch(
+  async (req: Request<{ id: string }, unknown, CommentDTO>, res: Response) => {
+    const postId = req.params.id;
+
+    await postsQueryRepo.findByID(postId);
+
+    const user = await usersQueryRepo.findByTokenData(req.loginOrEmail ?? '');
+
+    const commentID = await commentsService.leaveCommentByPost(
+      req.body,
+      { userId: user.userId, userLogin: user.login },
+      postId
+    );
+
+    const comment = await commentsQueryRepo.findById(commentID);
+
+    return res.status(HTTP_STATUS.CREATED).send(comment);
+  }
+);
+
 export const RouteHandler = {
   findPosts,
   findPostById,
   createPost,
   updatePost,
   deletePost,
+  addComment,
+  getComments,
 };

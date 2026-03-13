@@ -3,6 +3,7 @@ import { createId } from '../../../core/lib/create-id';
 import { IPost } from '../types/post.types';
 import { CreatePostDTO, PostDTO } from '../schemas/dto.schema';
 import { IBlogViewModel } from '../../blog/types/blog.types';
+import { commentsRepo } from '../../../repositories/comments/comments.repo';
 
 const createPost = async (
   post: CreatePostDTO,
@@ -27,9 +28,11 @@ const updatePost = async (id: string, post: PostDTO): Promise<boolean> => {
 };
 
 const deletePost = async (id: string): Promise<boolean> => {
-  const deleted = await PostsRepo.remove(createId(id));
+  const deletePostResult = await PostsRepo.remove(createId(id));
 
-  return !!deleted.deletedCount;
+  await commentsRepo.removeAllByPost(id);
+
+  return !!deletePostResult.deletedCount;
 };
 
 export const PostsService = {

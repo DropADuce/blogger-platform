@@ -1,9 +1,10 @@
 import express, { Express } from 'express';
+import { router as authRouter } from './api/auth/route';
 import { router as blogsRouter } from './api/blog/route/route';
 import { router as postsRouter } from './api/post/route/route';
 import { router as usersRouter } from './api/user/route/route';
+import { router as commentsRouter } from './api/comments/route/route';
 import { router as testingRouter } from './api/testing/route';
-import { router as authRouter } from './api/auth/route';
 import { runDB } from '../db/mongo/mongo.db';
 import { noop } from '../core/lib/noop';
 import { SETTINGS } from '../core/settings/setting';
@@ -15,6 +16,7 @@ const setupApp = (app: Express) => {
   app.use('/blogs', blogsRouter);
   app.use('/posts', postsRouter);
   app.use('/users', usersRouter);
+  app.use('/comments', commentsRouter)
   app.use('/testing', testingRouter);
 };
 

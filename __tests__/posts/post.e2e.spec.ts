@@ -1,12 +1,12 @@
 import express from 'express';
 import request from 'supertest';
-import { HTTP_STATUS } from '../src/core/constants/http-statuses.constants';
-import { startApp } from '../src/app/app';
+import { HTTP_STATUS } from '../../src/core/constants/http-statuses.constants';
+import { startApp } from '../../src/app/app';
 import { beforeEach, expect } from 'vitest';
-import { PostDTO } from '../src/domain/post/schemas/dto.schema';
-import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
-import { BlogTestFactory } from './utils/blog.factory';
-import { IPost } from '../src/domain/post/types/post.types';
+import { PostDTO } from '../../src/domain/post/schemas/dto.schema';
+import { BlogDTO } from '../../src/domain/blog/schemas/dto.schema';
+import { BlogTestFactory } from '../blogs/helpers/blog.factory';
+import { IPost } from '../../src/domain/post/types/post.types';
 
 const CORRECT_POST_DTO: PostDTO = {
   title: 'Имя поста',

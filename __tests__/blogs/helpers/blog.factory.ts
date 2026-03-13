@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { Express } from 'express';
-import { BlogDTO } from '../../src/domain/blog/schemas/dto.schema';
-import { IBlogViewModel } from '../../src/domain/blog/types/blog.types';
-import { HTTP_STATUS } from '../../src/core/constants/http-statuses.constants';
+import { BlogDTO } from '../../../src/domain/blog/schemas/dto.schema';
+import { IBlogViewModel } from '../../../src/domain/blog/types/blog.types';
+import { HTTP_STATUS } from '../../../src/core/constants/http-statuses.constants';
 
 export const BlogTestFactory = {
   async create(app: Express, dto?: Partial<BlogDTO>): Promise<IBlogViewModel> {

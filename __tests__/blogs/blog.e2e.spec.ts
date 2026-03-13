@@ -1,10 +1,10 @@
 import request from 'supertest';
-import { HTTP_STATUS } from '../src/core/constants/http-statuses.constants';
-import { BlogDTO } from '../src/domain/blog/schemas/dto.schema';
-import { createTestApp } from './utils/create-test-app';
-import { BlogTestFactory } from './utils/blog.factory';
-import { IBlogViewModel } from '../src/domain/blog/types/blog.types';
-import { CreatePostDTO } from '../src/domain/post/schemas/dto.schema';
+import { HTTP_STATUS } from '../../src/core/constants/http-statuses.constants';
+import { BlogDTO } from '../../src/domain/blog/schemas/dto.schema';
+import { createTestApp } from '../utils/create-test-app';
+import { BlogTestFactory } from './helpers/blog.factory';
+import { IBlogViewModel } from '../../src/domain/blog/types/blog.types';
+import { CreatePostDTO } from '../../src/domain/post/schemas/dto.schema';
 
 const CORRECT_BLOG_DTO: BlogDTO = {
   name: 'Имя блога',

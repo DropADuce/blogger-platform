@@ -10,7 +10,20 @@ interface IUserViewModel {
   createdAt: string;
 }
 
-const mapUserToViewModel = ({ // eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface IUserWhoModel {
+  login: string;
+  email: string;
+  userId: string;
+}
+
+const mapUserToWhoModel = (user: WithId<IUser>): IUserWhoModel => ({
+  login: user.login,
+  email: user.email,
+  userId: user._id.toString(),
+});
+
+const mapUserToViewModel = ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   password,
   ...user
 }: WithId<IUser>): IUserViewModel => mapMongoIdToId(user);
@@ -49,4 +62,17 @@ export const usersQueryRepo = {
     await users.findOne({
       $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
     }),
+  findByTokenData: async (loginOrEmail: string) => {
+    const user = await users.findOne({
+      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+    });
+
+    if (!user)
+      throw new NotFoundError(
+        'Пользователь не найден',
+        'usersQueryRepo.findByTokenData'
+      );
+
+    return mapUserToWhoModel(user);
+  },
 };
