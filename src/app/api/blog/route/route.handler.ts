@@ -56,7 +56,7 @@ const findBlogById = withTryCatch(
 
 const findPostsByBlogId = withTryCatch(
   async (
-    req: Request<{ id: string }, unknown, unknown, WithSortAndPagination>,
+    req: Request<{ id: string }, unknown, unknown, Partial<WithSortAndPagination>>,
     res: Response
   ) => {
     const params = WithSortAndPaginationSchema.parse(req.query);

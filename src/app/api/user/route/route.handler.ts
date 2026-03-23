@@ -24,10 +24,17 @@ const getAll = withTryCatch(
     const users = await usersQueryRepo.findAll(
       buildQuery(
         params,
-        buildFilter([
-          ['login', params.searchLoginTerm],
-          ['email', params.searchEmailTerm],
-        ], 'or')
+        buildFilter(
+          [
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            ['accountData.login', params.searchLoginTerm],
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            ['accountData.email', params.searchEmailTerm],
+          ],
+          'or'
+        )
       )
     );
 
@@ -46,7 +53,7 @@ const create = withTryCatch(
   async (req: Request<unknown, unknown, UserDTO>, res: Response) => {
     const createResult = await usersService.create(req.body);
 
-    const user = await usersQueryRepo.findByID(createResult.insertedId);
+    const user = await usersQueryRepo.findByID(createResult.insertedId.toString());
 
     return res.status(HTTP_STATUS.CREATED).send(user);
   }
