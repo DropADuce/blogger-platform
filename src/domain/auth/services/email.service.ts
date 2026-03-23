@@ -26,30 +26,17 @@ const resendCode = async (userId: string, email: string) => {
 };
 
 const verifyCode = async (code: string): Promise<Result> => {
+  const t = await usersQueryRepo.findAll({
+    filter: {},
+    pagination: { skip: 0, count: 10 },
+    sortParams: {},
+  });
+
+  console.log('Не находим пользователя, посмотрим, есть ли он', t);
+
   const user = await usersQueryRepo.findByConfirmCode(code);
 
   const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
-
-  // Добавил временно, что бы понимать, что происходит на тестах
-  if (!user)
-    return {
-      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
-      data: null,
-      errorMessage: '',
-      extensions: isValid
-        ? []
-        : [{ field: 'code', message: 'Пользователь с таким кодом не найден' }],
-    };
-
-  if (isPast(parseISO(user.emailConfirmData.exp_date)))
-    return {
-      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
-      data: null,
-      errorMessage: '',
-      extensions: isValid
-        ? []
-        : [{ field: 'code', message: 'Ссылка протухла' }],
-    };
 
   if (isValid) await usersRepo.confirm(user.id.toString());
 
