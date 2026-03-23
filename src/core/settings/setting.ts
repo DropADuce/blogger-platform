@@ -8,4 +8,6 @@ export const SETTINGS = {
   DB_NAME: process.env.DB_NAME,
   JWT_SECRET: process.env.JWT_SECRET ?? '',
   JWT_TIME: Number(process.env.JWT_TIME ?? '300'),
+  YA_TRANSPORT_EMAIL: process.env.YA_TRANSPORT_EMAIL ?? '',
+  YA_TRANSPORT_PASSWORD: process.env.YA_TRANSPORT_PASSWORD ?? '',
 };

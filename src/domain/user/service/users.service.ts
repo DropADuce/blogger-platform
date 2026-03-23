@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import { UserDTO } from '../schemas/user.schema';
 import { usersRepo } from '../../../repositories/users/user.repo';
 import { createId } from '../../../core/lib/create-id';
@@ -5,6 +7,7 @@ import { NotFoundError } from '../../../core/errors/not-found.error';
 import { createPassword } from '../../../core/lib/create-password';
 import { BadRequestError } from '../../../core/errors/bad-request-error';
 import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
+import { createExpDate } from '../../../core/lib/create-exp-date';
 
 const findByLoginOrEmail = async (loginOrEmail: {
   login: string;
@@ -43,8 +46,16 @@ const create = async (user: UserDTO) => {
 
   return await usersRepo.create({
     ...user,
-    password,
-    createdAt: new Date().toISOString(),
+    accountData: {
+      ...user,
+      password,
+      createdAt: new Date().toISOString(),
+    },
+    emailConfirmData: {
+      code: uuidv4(),
+      exp_date: createExpDate(),
+      isConfirmed: false,
+    },
   });
 };
 

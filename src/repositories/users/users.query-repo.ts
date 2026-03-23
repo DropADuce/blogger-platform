@@ -5,6 +5,7 @@ import { mapMongoIdToId } from '../../core/lib/map-mongo-id-to-id';
 import { NotFoundError } from '../../core/errors/not-found.error';
 
 interface IUserViewModel {
+  id: string;
   login: string;
   email: string;
   createdAt: string;
@@ -17,16 +18,21 @@ interface IUserWhoModel {
 }
 
 const mapUserToWhoModel = (user: WithId<IUser>): IUserWhoModel => ({
-  login: user.login,
-  email: user.email,
+  login: user.accountData.login,
+  email: user.accountData.email,
   userId: user._id.toString(),
 });
 
 const mapUserToViewModel = ({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  password,
-  ...user
-}: WithId<IUser>): IUserViewModel => mapMongoIdToId(user);
+  _id,
+  accountData,
+}: WithId<IUser>): IUserViewModel =>
+  mapMongoIdToId({
+    _id,
+    login: accountData.login,
+    email: accountData.email,
+    createdAt: accountData.createdAt,
+  });
 
 export const usersQueryRepo = {
   findAll: async (params: {
@@ -47,8 +53,8 @@ export const usersQueryRepo = {
     return { users: foundedUsers.map(mapUserToViewModel), count };
   },
 
-  findByID: async (id: ObjectId) => {
-    const user = await users.findOne({ _id: id });
+  findByID: async (id: string) => {
+    const user = await users.findOne({ _id: new ObjectId(id) });
 
     if (!user)
       throw new NotFoundError(
@@ -58,13 +64,28 @@ export const usersQueryRepo = {
 
     return mapUserToViewModel(user);
   },
-  findByLoginOrEmail: async (loginOrEmail: string) =>
-    await users.findOne({
-      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
-    }),
+
+  findByLoginOrEmail: async (loginOrEmail: string) => {
+    const founded = await users.findOne({
+      $or: [
+        { 'accountData.login': loginOrEmail },
+        { 'accountData.email': loginOrEmail },
+      ],
+    });
+
+    if (founded)
+      return {
+        ...mapUserToViewModel(founded),
+        password: founded.accountData.password,
+      };
+  },
+
   findByTokenData: async (loginOrEmail: string) => {
     const user = await users.findOne({
-      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+      $or: [
+        { 'accountData.login': loginOrEmail },
+        { 'accountData.email': loginOrEmail },
+      ],
     });
 
     if (!user)
@@ -74,5 +95,31 @@ export const usersQueryRepo = {
       );
 
     return mapUserToWhoModel(user);
+  },
+
+  findByConfirmCode: async (code: string) => {
+    const user = await users.findOne({
+      $and: [
+        { 'emailConfirmData.code': code },
+        { 'emailConfirmData.isConfirmed': false },
+      ],
+    });
+
+    return user ? mapMongoIdToId(user) : null;
+  },
+
+  getEmailConfirmData: (id: string) =>
+    users
+      .findOne({ _id: new ObjectId(id) })
+      .then((user) => user?.emailConfirmData),
+
+  getIsConfirmed: async (email: string) => {
+    const user = await users.findOne({ 'accountData.email': email });
+
+    if (user)
+      return mapMongoIdToId({
+        _id: user._id,
+        isConfirmed: user.emailConfirmData.isConfirmed,
+      });
   },
 };
