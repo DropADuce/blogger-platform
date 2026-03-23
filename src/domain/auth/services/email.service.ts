@@ -20,15 +20,36 @@ const sendCode = async (confirmationData: { code: string; email: string }) => {
 const resendCode = async (userId: string, email: string) => {
   const code = crypto.randomUUID();
 
-  await usersRepo.updateCode(userId, { code, expDate: createExpDate() })
+  await usersRepo.updateCode(userId, { code, expDate: createExpDate() });
 
-  return sendCode({ code, email })
-}
+  return sendCode({ code, email });
+};
 
 const verifyCode = async (code: string): Promise<Result> => {
   const user = await usersQueryRepo.findByConfirmCode(code);
 
   const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
+
+  // Добавил временно, что бы понимать, что происходит на тестах
+  if (!user)
+    return {
+      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
+      data: null,
+      errorMessage: '',
+      extensions: isValid
+        ? []
+        : [{ field: 'code', message: 'Пользователь с таким кодом не найден' }],
+    };
+
+  if (isPast(parseISO(user.emailConfirmData.exp_date)))
+    return {
+      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
+      data: null,
+      errorMessage: '',
+      extensions: isValid
+        ? []
+        : [{ field: 'code', message: 'Ссылка протухла' }],
+    };
 
   if (isValid) await usersRepo.confirm(user.id.toString());
 
@@ -43,5 +64,5 @@ const verifyCode = async (code: string): Promise<Result> => {
 export const emailService = {
   sendCode,
   verifyCode,
-  resendCode
+  resendCode,
 };

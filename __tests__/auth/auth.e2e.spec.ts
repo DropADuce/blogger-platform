@@ -78,4 +78,8 @@ describe('/auth', async () => {
       expect(response.body.accessToken.split('.').length).toBe(3)
     });
   });
+
+  describe('POST /auth/registration-confirmation', () => {
+
+  });
 });
