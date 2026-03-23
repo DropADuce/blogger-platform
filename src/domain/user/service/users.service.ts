@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-
 import { UserDTO } from '../schemas/user.schema';
 import { usersRepo } from '../../../repositories/users/user.repo';
 import { createId } from '../../../core/lib/create-id';
@@ -52,7 +50,7 @@ const create = async (user: UserDTO) => {
       createdAt: new Date().toISOString(),
     },
     emailConfirmData: {
-      code: uuidv4(),
+      code: crypto.randomUUID(),
       exp_date: createExpDate(),
       isConfirmed: false,
     },

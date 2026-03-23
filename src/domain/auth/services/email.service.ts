@@ -1,5 +1,3 @@
-import { v4 as uuidV4 } from 'uuid';
-
 import { YA_TRANSPORT } from '../../../core/transport/email/email.transport';
 import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
 import { Result } from '../../../core/result/result.types';
@@ -20,7 +18,7 @@ const sendCode = async (confirmationData: { code: string; email: string }) => {
 };
 
 const resendCode = async (userId: string, email: string) => {
-  const code = uuidV4();
+  const code = crypto.randomUUID();
 
   await usersRepo.updateCode(userId, { code, expDate: createExpDate() })
 
