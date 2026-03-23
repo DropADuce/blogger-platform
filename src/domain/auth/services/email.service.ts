@@ -26,11 +26,7 @@ const resendCode = async (userId: string, email: string) => {
 };
 
 const verifyCode = async (code: string): Promise<Result> => {
-  const t = await usersQueryRepo.findAll({
-    filter: {},
-    pagination: { skip: 0, count: 10 },
-    sortParams: {},
-  });
+  const t = await usersQueryRepo.findFuckingAll();
 
   console.log('Не находим пользователя, посмотрим, есть ли он', t);
 

@@ -122,4 +122,5 @@ export const usersQueryRepo = {
         isConfirmed: user.emailConfirmData.isConfirmed,
       });
   },
+  findFuckingAll: () => users.find().toArray(),
 };
