@@ -19,7 +19,7 @@ export const usersRepo = {
       { _id: new ObjectId(id) },
       {
         $set: {
-          'codeConfirmData.code': code,
+          // 'codeConfirmData.code': code,
           'codeConfirmData.exp_date': expDate,
         },
       }
