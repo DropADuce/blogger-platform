@@ -26,10 +26,6 @@ const resendCode = async (userId: string, email: string) => {
 };
 
 const verifyCode = async (code: string): Promise<Result> => {
-  const t = await usersQueryRepo.findFuckingAll();
-
-  console.log('Не находим пользователя, посмотрим, есть ли он', t);
-
   const user = await usersQueryRepo.findByConfirmCode(code);
 
   const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
