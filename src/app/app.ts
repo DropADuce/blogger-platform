@@ -1,4 +1,6 @@
 import express, { Express } from 'express';
+import cookieParser from 'cookie-parser';
+
 import { router as authRouter } from './api/auth/route';
 import { router as blogsRouter } from './api/blog/route/route';
 import { router as postsRouter } from './api/post/route/route';
@@ -10,6 +12,7 @@ import { noop } from '../core/lib/noop';
 import { SETTINGS } from '../core/settings/setting';
 
 const setupApp = (app: Express) => {
+  app.use(cookieParser());
   app.use(express.json());
 
   app.use('/auth', authRouter);

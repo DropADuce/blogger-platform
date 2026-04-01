@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { withTryCatch } from '../../../core/lib/with-try-catch';
 import { LoginDTO } from '../../../domain/auth/models/login.schema';
-import { loginService } from '../../../domain/auth/services/login.service';
+import { authService } from '../../../domain/auth/services/auth.service';
 import { JWTService } from '../../../domain/auth/services/jwt.service';
 import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
 import { UserDTO } from '../../../domain/user/schemas/user.schema';
@@ -12,6 +12,7 @@ import { emailService } from '../../../domain/auth/services/email.service';
 import { ConfirmEmailDTO } from '../../../domain/auth/models/email-code.schema';
 import { mapResultCodeToHttp } from '../../../core/result/map-result-code-to-http';
 import { EmailDTO } from '../../../domain/auth/models/email.schema';
+import { UnauthorizeError } from '../../../core/errors/unauthorize-error';
 
 const me = withTryCatch(async (req, res) => {
   const user = await usersQueryRepo.findByTokenData(req.loginOrEmail ?? '');
@@ -21,11 +22,13 @@ const me = withTryCatch(async (req, res) => {
 
 const login = withTryCatch(
   async (req: Request<unknown, unknown, LoginDTO>, res: Response) => {
-    await loginService.login(req.body);
+    await authService.login(req.body);
 
-    const accessToken = await JWTService.createToken(req.body.loginOrEmail);
+    const tokens = await JWTService.createToken(req.body.loginOrEmail);
 
-    return res.send({ accessToken });
+    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
+
+    return res.send({ accessToken: tokens.accessToken });
   }
 );
 
@@ -81,9 +84,41 @@ const resendEmail = withTryCatch(
 
     await emailService.resendCode(confirmData.id, req.body.email);
 
-    return res.sendStatus(HTTP_STATUS.NO_CONTENT)
+    return res.sendStatus(HTTP_STATUS.NO_CONTENT);
   }
 );
+
+const updateTokens = withTryCatch(async (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) throw new UnauthorizeError();
+
+  const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
+    req.cookies.refreshToken
+  );
+
+  await authService.discardToken(tokenData.loginOrEmail, token);
+
+  const tokens = await JWTService.createToken(tokenData.loginOrEmail);
+
+  res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
+
+  return res.send({ accessToken: tokens.accessToken });
+});
+
+const logout = withTryCatch(async (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) throw new UnauthorizeError();
+
+  const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
+    req.cookies.refreshToken
+  );
+
+  await authService.discardToken(tokenData.loginOrEmail, token);
+
+  res.sendStatus(HTTP_STATUS.OK);
+});
 
 export const routeHandler = {
   me,
@@ -91,4 +126,6 @@ export const routeHandler = {
   register,
   verify,
   resendEmail,
+  updateTokens,
+  logout,
 };

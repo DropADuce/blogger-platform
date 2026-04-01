@@ -24,4 +24,9 @@ export const usersRepo = {
         },
       }
     ),
+  discardToken: (id: string, token: string) =>
+    users.updateOne(
+      { _id: new ObjectId(id) },
+      { $push: { 'authData.blackList': token } }
+    ),
 };

@@ -1,6 +1,7 @@
 export interface IUser {
   accountData: IAccountData;
-  emailConfirmData: IEmailConfirmationData
+  emailConfirmData: IEmailConfirmationData;
+  authData: IAuthData;
 }
 
 interface IAccountData {
@@ -14,4 +15,8 @@ interface IEmailConfirmationData {
   code: string;
   exp_date: string;
   isConfirmed: boolean;
+}
+
+interface IAuthData {
+  blackList: Array<string>;
 }

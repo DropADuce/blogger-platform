@@ -12,6 +12,7 @@ export const router = Router();
 router
   .get('/me', withJwtTokenMiddleware, routeHandler.me)
   .post('/login', dtoValidationMiddleware(LoginDTOSchema), routeHandler.login)
+  .post('/refresh-token', routeHandler.updateTokens)
   .post(
     '/registration',
     dtoValidationMiddleware(UserDTOSchema),
@@ -26,4 +27,4 @@ router
     '/registration-email-resending',
     dtoValidationMiddleware(EmailDTOSchema),
     routeHandler.resendEmail
-  );
+  ).post('/logout');
