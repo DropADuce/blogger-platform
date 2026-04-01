@@ -4,7 +4,7 @@ import { SETTINGS } from '../../../core/settings/setting';
 const createToken = async (loginOrEmail: string) =>
   Promise.all([
     jwt.sign({ loginOrEmail }, SETTINGS.JWT_SECRET, {
-      expiresIn: `${SETTINGS.ACCESS_TOKEN_TIME} s`,
+      expiresIn: `${SETTINGS.ACCESS_TOKEN_TIME} sec`,
     }),
     jwt.sign({ loginOrEmail }, SETTINGS.JWT_SECRET, {
       expiresIn: `${SETTINGS.REFRESH_TOKEN_TIME} s`,

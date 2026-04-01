@@ -75,11 +75,13 @@ describe('/auth', async () => {
         .send({ loginOrEmail: 'Q54jAMzj4P', password: 'string' })
         .expect(HTTP_STATUS.OK);
 
-      expect(response.body.accessToken.split('.').length).toBe(3)
+      expect(response.body.accessToken.split('.').length).toBe(3);
+
+      const setCookie = response.headers['set-cookie'];
+
+      expect(setCookie).not.toBeUndefined();
+      expect(setCookie![0]).toContain('refreshToken=');
+      expect(setCookie![0]).toContain('HttpOnly');
     });
-  });
-
-  describe('POST /auth/registration-confirmation', () => {
-
   });
 });

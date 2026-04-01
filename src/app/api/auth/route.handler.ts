@@ -26,7 +26,7 @@ const login = withTryCatch(
 
     const tokens = await JWTService.createToken(req.body.loginOrEmail);
 
-    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
+    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
 
     return res.send({ accessToken: tokens.accessToken });
   }
@@ -101,7 +101,7 @@ const updateTokens = withTryCatch(async (req, res) => {
 
   const tokens = await JWTService.createToken(tokenData.loginOrEmail);
 
-  res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
+  res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
 
   return res.send({ accessToken: tokens.accessToken });
 });
