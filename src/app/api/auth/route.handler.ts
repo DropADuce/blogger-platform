@@ -91,15 +91,15 @@ const resendEmail = withTryCatch(
 const updateTokens = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
 
-  if (!token) throw new UnauthorizeError();
-
   const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
     req.cookies.refreshToken
   );
 
-  await authService.discardToken(tokenData.loginOrEmail, token);
+  if (!token || !tokenData.data) throw new UnauthorizeError();
 
-  const tokens = await JWTService.createToken(tokenData.loginOrEmail);
+  await authService.discardToken(tokenData.data.loginOrEmail, token);
+
+  const tokens = await JWTService.createToken(tokenData.data.loginOrEmail);
 
   res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
 
@@ -109,13 +109,13 @@ const updateTokens = withTryCatch(async (req, res) => {
 const logout = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
 
-  if (!token) throw new UnauthorizeError();
-
   const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
     req.cookies.refreshToken
   );
 
-  await authService.discardToken(tokenData.loginOrEmail, token);
+  if (!token || !tokenData.data) throw new UnauthorizeError();
+
+  await authService.discardToken(tokenData.data.loginOrEmail, token);
 
   res.sendStatus(HTTP_STATUS.OK);
 });
