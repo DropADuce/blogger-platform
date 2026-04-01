@@ -27,4 +27,4 @@ router
     '/registration-email-resending',
     dtoValidationMiddleware(EmailDTOSchema),
     routeHandler.resendEmail
-  ).post('/logout');
+  ).post('/logout', routeHandler.logout);
