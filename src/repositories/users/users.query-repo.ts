@@ -122,4 +122,11 @@ export const usersQueryRepo = {
         isConfirmed: user.emailConfirmData.isConfirmed,
       });
   },
+  isTokenInBlackLit: (loginOrEmail: string, token: string) => users.findOne({
+    $or: [
+      { login: loginOrEmail },
+      { email: loginOrEmail }
+    ],
+    "authData.blackList": token
+  })
 };
