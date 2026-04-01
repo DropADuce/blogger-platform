@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS } from '../constants/http-statuses.constants';
 import { z } from 'zod';
 import { JWTService } from '../../domain/auth/services/jwt.service';
-import { UnauthorizeError } from '../errors/unauthorize-error';
 
 const BearerTokenSchema = z.object({
   authorization: z
@@ -24,9 +23,7 @@ export const withJwtTokenMiddleware = async (
       token ?? ''
     );
 
-    if (!payload.data) throw new UnauthorizeError();
-
-    req.loginOrEmail = payload.data.loginOrEmail;
+    req.loginOrEmail = payload.loginOrEmail;
 
     return next();
   } catch {

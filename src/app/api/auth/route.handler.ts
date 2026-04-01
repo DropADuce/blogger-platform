@@ -12,7 +12,6 @@ import { emailService } from '../../../domain/auth/services/email.service';
 import { ConfirmEmailDTO } from '../../../domain/auth/models/email-code.schema';
 import { mapResultCodeToHttp } from '../../../core/result/map-result-code-to-http';
 import { EmailDTO } from '../../../domain/auth/models/email.schema';
-import { UnauthorizeError } from '../../../core/errors/unauthorize-error';
 
 const me = withTryCatch(async (req, res) => {
   const user = await usersQueryRepo.findByTokenData(req.loginOrEmail ?? '');
@@ -91,15 +90,9 @@ const resendEmail = withTryCatch(
 const updateTokens = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
 
-  const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
-    req.cookies.refreshToken
-  );
+  await authService.discardToken(req.loginOrEmail ?? '', token);
 
-  if (!token || !tokenData.data) throw new UnauthorizeError();
-
-  await authService.discardToken(tokenData.data.loginOrEmail, token);
-
-  const tokens = await JWTService.createToken(tokenData.data.loginOrEmail);
+  const tokens = await JWTService.createToken(req.loginOrEmail ?? '');
 
   res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
 
@@ -108,16 +101,11 @@ const updateTokens = withTryCatch(async (req, res) => {
 
 const logout = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
+  const loginOrEmail = req.loginOrEmail ?? '';
 
-  const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
-    req.cookies.refreshToken
-  );
+  await authService.discardToken(loginOrEmail, token);
 
-  if (!token || !tokenData.data) throw new UnauthorizeError();
-
-  await authService.discardToken(tokenData.data.loginOrEmail, token);
-
-  res.sendStatus(HTTP_STATUS.OK);
+  res.sendStatus(HTTP_STATUS.NO_CONTENT);
 });
 
 export const routeHandler = {
