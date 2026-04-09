@@ -6,7 +6,7 @@ import { HTTP_STATUS } from '../constants/http-statuses.constants';
 import { ipRatesRepo } from '../../repositories/ip-rates/ip-rates.repo';
 
 const DATE_INTERVAL = 10;
-const REQUESTS_PORTION = 5;
+const REQUESTS_PORTION = 4;
 
 export const ipRatesMiddleware = async (
   req: Request,
