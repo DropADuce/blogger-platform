@@ -26,7 +26,7 @@ export const ipRatesMiddleware = async (
       date: dateInterval.toISOString(),
     });
 
-    if (lastRequestsCount > REQUESTS_PORTION)
+    if (lastRequestsCount >= REQUESTS_PORTION)
       return res.sendStatus(HTTP_STATUS.TOO_MANY);
 
     await ipRatesRepo.addRate({ ip, date: new Date().toISOString(), URL: url });
