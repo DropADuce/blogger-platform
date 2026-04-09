@@ -11,18 +11,11 @@ export const withRefreshTokenMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    console.log('кука', req.cookies.refreshToken);
     const tokenData = await JWTService.verifyToken<{ deviceId: string }>(req.cookies.refreshToken);
-
-    console.log('Если кука пришла, то вот так: ', tokenData);
 
     const session = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
 
-    console.log(session, 'Вот такая сессия существует');
-
     const user = await usersQueryRepo.findByID(session?.userId ?? '');
-
-    console.log(user, 'Вот такой user существует');
 
     if (!user) throw new UnauthorizeError();
 
@@ -31,9 +24,9 @@ export const withRefreshTokenMiddleware = async (
       req.cookies.refreshToken
     );
 
-    console.log(isInvalidToken, 'Если токен не валидный, то уидем ща его');
-
     if (isInvalidToken) return res.sendStatus(HTTP_STATUS.UNAUTHORIZED);
+
+    req.loginOrEmail = user.login || user.email;
 
     return next();
   } catch {
