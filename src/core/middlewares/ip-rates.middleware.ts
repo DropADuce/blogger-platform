@@ -5,7 +5,7 @@ import { IpRatesQueryRepo } from '../../repositories/ip-rates/ip-rates.query-rep
 import { HTTP_STATUS } from '../constants/http-statuses.constants';
 import { ipRatesRepo } from '../../repositories/ip-rates/ip-rates.repo';
 
-const DATE_INTERVAL = 10;
+const DATE_INTERVAL = 15;
 const REQUESTS_PORTION = 5;
 
 export const ipRatesMiddleware = async (
@@ -26,7 +26,7 @@ export const ipRatesMiddleware = async (
       date: dateInterval.toISOString(),
     });
 
-    if (lastRequestsCount >= REQUESTS_PORTION)
+    if (lastRequestsCount > REQUESTS_PORTION)
       return res.sendStatus(HTTP_STATUS.TOO_MANY);
 
     await ipRatesRepo.addRate({ ip, date: new Date().toISOString(), URL: url });
