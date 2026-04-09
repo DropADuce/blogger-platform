@@ -11,7 +11,10 @@ export const withRefreshTokenMiddleware = async (
   next: NextFunction
 ) => {
   try {
+    console.log('кука', req.cookies.refreshToken);
     const tokenData = await JWTService.verifyToken<{ deviceId: string }>(req.cookies.refreshToken);
+
+    console.log('Если кука пришла, то вот так: ', tokenData);
 
     const session = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
 
