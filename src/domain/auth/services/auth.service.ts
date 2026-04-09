@@ -32,14 +32,14 @@ const discardToken = async (
     return {
       status: ResultStatus.Success,
       data: null,
-      extensions: []
+      extensions: [],
     };
   }
 
   return {
     status: ResultStatus.BadRequest,
     data: null,
-    extensions: []
+    extensions: [],
   };
 };
 
