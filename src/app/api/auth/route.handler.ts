@@ -46,7 +46,7 @@ const login = withTryCatch(
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
     });
 
     res.send({ accessToken: tokens.accessToken });
