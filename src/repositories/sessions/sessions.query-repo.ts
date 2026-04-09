@@ -20,7 +20,7 @@ const getActiveDevicesByUser = async (userId: string) => {
   const activeDevices = await sessions
     .find({
       userId,
-      expirationDate: { $gte: new Date() },
+      // expirationDate: { $gte: new Date() },
     })
     .toArray();
 
