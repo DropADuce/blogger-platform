@@ -10,9 +10,16 @@ const LOGIN_PAYLOAD_FALLBACK: LoginDTO = {
 
 export const login = (
   app: Express,
-  credentials: Partial<LoginDTO> = LOGIN_PAYLOAD_FALLBACK
-) =>
-  request(app)
-    .post('/auth/login')
+  credentials: Partial<LoginDTO> = LOGIN_PAYLOAD_FALLBACK,
+  userAgent?: string | null
+) => {
+  const req = request(app).post('/auth/login');
+
+  if (userAgent) {
+    req.set('user-agent', userAgent);
+  }
+
+  return req
     .send({ ...LOGIN_PAYLOAD_FALLBACK, ...credentials })
     .expect(HTTP_STATUS.OK);
+};

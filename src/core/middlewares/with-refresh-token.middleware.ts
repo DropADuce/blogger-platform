@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { JWTService } from '../../domain/auth/services/jwt.service';
 import { HTTP_STATUS } from '../constants/http-statuses.constants';
 import { usersQueryRepo } from '../../repositories/users/users.query-repo';
+import { JWTService } from '../../domain/auth/services/jwt.service';
+import { sessionsQueryRepo } from '../../repositories/sessions/sessions.query-repo';
+import { UnauthorizeError } from '../errors/unauthorize-error';
 
 export const withRefreshTokenMiddleware = async (
   req: Request,
@@ -9,14 +11,16 @@ export const withRefreshTokenMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const tokenData = await JWTService.verifyToken<{ loginOrEmail: string }>(
-      req.cookies.refreshToken
-    );
+    const tokenData = await JWTService.verifyToken<{ deviceId: string }>(req.cookies.refreshToken);
 
-    req.loginOrEmail = tokenData.loginOrEmail;
+    const session = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
+
+    const user = await usersQueryRepo.findByID(session?.userId ?? '');
+
+    if (!user) throw new UnauthorizeError();
 
     const isInvalidToken = await usersQueryRepo.isTokenInBlackLit(
-      tokenData.loginOrEmail ?? '',
+      user.login || user.email,
       req.cookies.refreshToken
     );
 

@@ -7,17 +7,23 @@ import {
   IComment,
   ICommentByPost,
 } from '../../domain/comment/types/comment.types';
+import { IIPRate } from '../../domain/ip-rates/rate.types';
+import { ISession } from '../../domain/session/types/session.types';
 
 const BLOGS_COLLECTION_NAME = 'blogs';
 const POSTS_COLLECTION_NAME = 'posts';
 const USERS_COLLECTION_NAME = 'users';
 const COMMENTS_COLLECTION_NAME = 'comments';
+const IP_RATES_COLLECTION_NAME = 'ip-rates';
+const SESSIONS_COLLECTION_NAME = 'sessions';
 
 export let client: MongoClient;
 export let posts: Collection<IPost>;
 export let blogs: Collection<IBlog>;
 export let users: Collection<IUser>;
 export let comments: Collection<IComment | ICommentByPost>;
+export let ipRates: Collection<IIPRate>;
+export let sessions: Collection<ISession>;
 
 export const runDB = async (url: string = ''): Promise<void> => {
   client = new MongoClient(url);
@@ -28,6 +34,8 @@ export const runDB = async (url: string = ''): Promise<void> => {
   posts = DB.collection<IPost>(POSTS_COLLECTION_NAME);
   users = DB.collection<IUser>(USERS_COLLECTION_NAME);
   comments = DB.collection<IComment>(COMMENTS_COLLECTION_NAME);
+  ipRates = DB.collection<IIPRate>(IP_RATES_COLLECTION_NAME);
+  sessions = DB.collection<ISession>(SESSIONS_COLLECTION_NAME);
 
   try {
     await client.connect();

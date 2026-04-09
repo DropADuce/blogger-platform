@@ -12,6 +12,9 @@ import { emailService } from '../../../domain/auth/services/email.service';
 import { ConfirmEmailDTO } from '../../../domain/auth/models/email-code.schema';
 import { mapResultCodeToHttp } from '../../../core/result/map-result-code-to-http';
 import { EmailDTO } from '../../../domain/auth/models/email.schema';
+import { sessionsService } from '../../../domain/session/services/session.service';
+import { UnauthorizeError } from '../../../core/errors/unauthorize-error';
+import { sessionsQueryRepo } from '../../../repositories/sessions/sessions.query-repo';
 
 const me = withTryCatch(async (req, res) => {
   const user = await usersQueryRepo.findByTokenData(req.loginOrEmail ?? '');
@@ -23,11 +26,30 @@ const login = withTryCatch(
   async (req: Request<unknown, unknown, LoginDTO>, res: Response) => {
     await authService.login(req.body);
 
-    const tokens = await JWTService.createToken(req.body.loginOrEmail);
+    const ip = req.ip;
+    const user = await usersQueryRepo.findByLoginOrEmail(req.body.loginOrEmail);
 
-    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
+    if (!ip || !user) throw new UnauthorizeError();
 
-    return res.send({ accessToken: tokens.accessToken });
+    const tokens = await sessionsService.createSession(
+      {
+        ip: ip,
+        userId: user.id,
+        deviceName: req.headers['user-agent'] ?? 'Неизвестное устройство',
+      },
+      {
+        createAccessToken: () =>
+          JWTService.createAccessToken(req.body.loginOrEmail),
+        createRefreshToken: JWTService.createRefreshToken,
+      }
+    );
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: false,
+    });
+
+    res.send({ accessToken: tokens.accessToken });
   }
 );
 
@@ -90,20 +112,43 @@ const resendEmail = withTryCatch(
 const updateTokens = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
 
-  await authService.discardToken(req.loginOrEmail ?? '', token);
+  const tokenData = await JWTService.decodeToken<{ deviceId: string }>(token);
 
-  const tokens = await JWTService.createToken(req.loginOrEmail ?? '');
+  const sessionData = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
 
-  res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true });
+  const userData = await usersQueryRepo.findByID(sessionData?.userId ?? '');
+
+  if (!sessionData || !userData) throw new UnauthorizeError();
+
+  await authService.discardToken(userData.login, token);
+
+  const tokens = await sessionsService.updateSession(
+    { deviceId: tokenData.deviceId },
+    {
+      createAccessToken: () =>
+        JWTService.createAccessToken(userData.login || userData.email),
+      createRefreshToken: JWTService.createRefreshToken,
+    }
+  );
+
+  res.cookie('refreshToken', tokens.refreshToken, {
+    httpOnly: true,
+    secure: true,
+  });
 
   return res.send({ accessToken: tokens.accessToken });
 });
 
 const logout = withTryCatch(async (req, res) => {
   const token = req.cookies.refreshToken;
+
   const loginOrEmail = req.loginOrEmail ?? '';
 
+  const tokenData = await JWTService.verifyToken<{ deviceId: string }>(token);
+
   await authService.discardToken(loginOrEmail, token);
+
+  await sessionsService.removeCurrentSession({ deviceId: tokenData.deviceId });
 
   res.sendStatus(HTTP_STATUS.NO_CONTENT);
 });
