@@ -62,11 +62,10 @@ const register = withTryCatch(
     );
 
     if (confirmData) {
-      await emailService
-        .sendCode({ email: req.body.email, code: confirmData.code })
-        // .catch(() => {
-        //   usersService.remove(user.insertedId.toString());
-        // });
+      emailService.sendCode({ email: req.body.email, code: confirmData.code });
+      // .catch(() => {
+      //   usersService.remove(user.insertedId.toString());
+      // });
     }
 
     return res.sendStatus(HTTP_STATUS.NO_CONTENT);
@@ -114,7 +113,9 @@ const updateTokens = withTryCatch(async (req, res) => {
 
   const tokenData = await JWTService.decodeToken<{ deviceId: string }>(token);
 
-  const sessionData = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
+  const sessionData = await sessionsQueryRepo.getSessionByDeviceId(
+    tokenData.deviceId
+  );
 
   const userData = await usersQueryRepo.findByID(sessionData?.userId ?? '');
 

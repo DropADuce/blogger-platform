@@ -22,7 +22,7 @@ const resendCode = async (userId: string, email: string) => {
 
   await usersRepo.updateCode(userId, { code, expDate: createExpDate() });
 
-  return sendCode({ code, email });
+  sendCode({ code, email });
 };
 
 const verifyCode = async (code: string): Promise<Result> => {
