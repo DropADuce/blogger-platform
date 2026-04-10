@@ -15,7 +15,7 @@ export const ipRatesMiddleware = async (
 ) => {
   try {
     const ip = req.ip;
-    const url = req.baseUrl || req.originalUrl;
+    const url = req.originalUrl || req.baseUrl;
     const dateInterval = subSeconds(new Date(), DATE_INTERVAL);
 
     if (!ip) return res.sendStatus(HTTP_STATUS.BAD_REQUEST);

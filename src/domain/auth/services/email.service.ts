@@ -6,8 +6,8 @@ import { isPast, parseISO } from 'date-fns';
 import { usersRepo } from '../../../repositories/users/user.repo';
 import { createExpDate } from '../../../core/lib/create-exp-date';
 
-const sendCode = async (confirmationData: { code: string; email: string }) => {
-  return await YA_TRANSPORT.send({
+const sendCode = (confirmationData: { code: string; email: string }) => {
+  YA_TRANSPORT.send({
     email: confirmationData.email,
     subject: 'Подтверждение регистрации',
     message: `<h1>Thank for your registration</h1>
