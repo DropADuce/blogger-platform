@@ -64,9 +64,9 @@ const register = withTryCatch(
     if (confirmData) {
       await emailService
         .sendCode({ email: req.body.email, code: confirmData.code })
-        .catch(() => {
-          usersService.remove(user.insertedId.toString());
-        });
+        // .catch(() => {
+        //   usersService.remove(user.insertedId.toString());
+        // });
     }
 
     return res.sendStatus(HTTP_STATUS.NO_CONTENT);
