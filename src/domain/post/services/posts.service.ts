@@ -1,42 +1,70 @@
-import { PostsRepo } from '../../../repositories/posts/posts.repo';
-import { createId } from '../../../core/lib/create-id';
+import { inject, injectable } from 'inversify';
+
 import { IPost } from '../types/post.types';
 import { CreatePostDTO, PostDTO } from '../schemas/dto.schema';
 import { IBlogViewModel } from '../../blog/types/blog.types';
-import { commentsRepo } from '../../../repositories/comments/comments.repo';
+import { CommentsRepository } from '../../../repositories/comments/comments.repo';
+import { PostsRepository } from '../../../repositories/posts/posts.repo';
+import { Result } from '../../../core/result/result.types';
+import { ResultStatus } from '../../../core/result/result-code';
 
-const createPost = async (
-  post: CreatePostDTO,
-  blog: IBlogViewModel
-): Promise<string> => {
-  const newPost: IPost = {
-    ...post,
-    blogId: blog.id,
-    blogName: blog.name,
-    createdAt: new Date().toISOString(),
-  };
+@injectable()
+export class PostsService {
+  constructor(
+    @inject(PostsRepository) private readonly postsRepository: PostsRepository,
+    @inject(CommentsRepository)
+    private readonly commentsRepository: CommentsRepository
+  ) {}
 
-  const result = await PostsRepo.create(newPost);
+  private createModelFromDTO(post: CreatePostDTO, blog: IBlogViewModel): IPost {
+    return {
+      ...post,
+      blogId: blog.id,
+      blogName: blog.name,
+      createdAt: new Date().toISOString(),
+    };
+  }
 
-  return result.insertedId.toString();
-};
+  async createPost(
+    post: CreatePostDTO,
+    blog: IBlogViewModel
+  ): Promise<Result<{ id: string }>> {
+    const result = await this.postsRepository.createPost(
+      this.createModelFromDTO(post, blog)
+    );
 
-const updatePost = async (id: string, post: PostDTO): Promise<boolean> => {
-  const result = await PostsRepo.replace(createId(id), post);
+    return {
+      status: result.insertedId
+        ? ResultStatus.Success
+        : ResultStatus.BadRequest,
+      data: { id: result.insertedId.toString() },
+      extensions: [],
+    };
+  }
 
-  return !!result.modifiedCount;
-};
+  async updatePost(id: string, dto: PostDTO): Promise<Result> {
+    const result = await this.postsRepository.replacePost(id, dto);
 
-const deletePost = async (id: string): Promise<boolean> => {
-  const deletePostResult = await PostsRepo.remove(createId(id));
+    return {
+      status: result.modifiedCount
+        ? ResultStatus.Success
+        : ResultStatus.BadRequest,
+      data: null,
+      extensions: [],
+    };
+  }
 
-  await commentsRepo.removeAllByPost(id);
+  async deletePost(id: string): Promise<Result> {
+    const deletePostResult = await this.postsRepository.removePost(id);
 
-  return !!deletePostResult.deletedCount;
-};
+    await this.commentsRepository.removeAllCommentsByPost(id);
 
-export const PostsService = {
-  createPost,
-  updatePost,
-  deletePost,
-};
+    return {
+      status: deletePostResult.deletedCount
+        ? ResultStatus.Success
+        : ResultStatus.BadRequest,
+      data: null,
+      extensions: [],
+    };
+  }
+}

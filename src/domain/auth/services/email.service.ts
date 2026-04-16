@@ -1,47 +1,114 @@
+import { add, isPast, parseISO } from 'date-fns';
+import { inject, injectable } from 'inversify';
+
 import { YA_TRANSPORT } from '../../../core/transport/email/email.transport';
-import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
-import { Result } from '../../../core/result/result.types';
+import { UsersRepository } from '../../../repositories/users/user.repo';
+import { UsersQueryRepository } from '../../../repositories/users/users.query-repo';
 import { ResultStatus } from '../../../core/result/result-code';
-import { isPast, parseISO } from 'date-fns';
-import { usersRepo } from '../../../repositories/users/user.repo';
-import { createExpDate } from '../../../core/lib/create-exp-date';
+import { createPassword } from '../../../core/lib/create-password';
+import { Result } from '../../../core/result/result.types';
 
-const sendCode = (confirmationData: { code: string; email: string }) => {
-  YA_TRANSPORT.send({
-    email: confirmationData.email,
-    subject: 'Подтверждение регистрации',
-    message: `<h1>Thank for your registration</h1>
+@injectable()
+export class EmailService {
+  constructor(
+    @inject(UsersRepository) private usersRepository: UsersRepository,
+    @inject(UsersQueryRepository)
+    private usersQueryRepository: UsersQueryRepository
+  ) {}
+
+  private sendEmail(data: { email: string; subject: string; message: string }) {
+    YA_TRANSPORT.send(data);
+  }
+
+  private getConfirmMessage(code: string) {
+    return `<h1>Thank for your registration</h1>
  <p>To finish registration please follow the link below:
-     <a href='https://somesite.com/confirm-email?code=${confirmationData.code}'>complete registration</a>
- </p>`,
-  });
-};
+     <a href='https://somesite.com/confirm-email?code=${code}'>complete registration</a>
+ </p>`;
+  }
 
-const resendCode = async (userId: string, email: string) => {
-  const code = crypto.randomUUID();
+  private getRecoveryMessage(code: string) {
+    return `
+    <h1>Password recovery</h1>
+    
+    <p>To finish password recovery please follow the link below:
+        <a href='https://somesite.com/password-recovery?recoveryCode=${code}'>recovery password</a>
+    </p>
+    `;
+  }
 
-  await usersRepo.updateCode(userId, { code, expDate: createExpDate() });
+  private get confirmCode() {
+    return crypto.randomUUID().toString();
+  }
 
-  sendCode({ code, email });
-};
+  private get expDate() {
+    return add(new Date(), { days: 3 }).toISOString();
+  }
 
-const verifyCode = async (code: string): Promise<Result> => {
-  const user = await usersQueryRepo.findByConfirmCode(code);
+  sendConfirmCode(data: { code: string; email: string }) {
+    this.sendEmail({
+      email: data.email,
+      subject: 'Подтверждение регистрации',
+      message: this.getConfirmMessage(data.code),
+    });
+  }
 
-  const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
+  async resendConfirmCode(data: { userId: string; email: string }) {
+    const code = crypto.randomUUID();
 
-  if (isValid) await usersRepo.confirm(user.id.toString());
+    await this.usersRepository.updateConfirmCode(data.userId, {
+      code,
+      expDate: this.expDate,
+    });
 
-  return {
-    status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
-    data: null,
-    errorMessage: '',
-    extensions: isValid ? [] : [{ field: 'code', message: 'Не валидный код' }],
-  };
-};
+    this.sendConfirmCode({ code, email: data.email });
+  }
 
-export const emailService = {
-  sendCode,
-  verifyCode,
-  resendCode,
-};
+  async sendRecoveryCode(data: { userId: string; email: string }) {
+    const code = this.confirmCode;
+
+    await this.usersRepository.updateConfirmCode(data.userId, {
+      code,
+      expDate: this.expDate,
+    });
+
+    this.sendConfirmCode({ code, email: data.email });
+  }
+
+  async updatePasswordByRecoveryCode(dto: {
+    newPassword: string;
+    recoveryCode: string;
+  }): Promise<Result> {
+    const user = await this.usersQueryRepository.findByConfirmCode(
+      dto.recoveryCode
+    );
+
+    const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
+
+    const password = await createPassword({ password: dto.newPassword });
+
+    if (isValid)
+      await this.usersRepository.updateUserPassword(user.id, password);
+
+    return {
+      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
+      data: null,
+      extensions: [],
+    };
+  }
+
+  async verifyCode(code: string) {
+    const user = await this.usersQueryRepository.findByConfirmCode(code);
+
+    const isValid = !!user && !isPast(parseISO(user.emailConfirmData.exp_date));
+
+    if (isValid) await this.usersRepository.confirmCode(user.id.toString());
+
+    return {
+      status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
+      data: null,
+      errorMessage: '',
+      extensions: [],
+    };
+  }
+}

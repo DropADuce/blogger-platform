@@ -9,12 +9,18 @@ import { ConfirmEmailDTOSchema } from '../../../domain/auth/models/email-code.sc
 import { EmailDTOSchema } from '../../../domain/auth/models/email.schema';
 import { withRefreshTokenMiddleware } from '../../../core/middlewares/with-refresh-token.middleware';
 import { ipRatesMiddleware } from '../../../core/middlewares/ip-rates.middleware';
+import { UpdatePasswordByEmailDtoSchema } from '../../../domain/auth/models/update-password-by-email.dto.schema';
 
 export const router = Router();
 
 router
   .get('/me', withJwtTokenMiddleware, routeHandler.me)
-  .post('/login', ipRatesMiddleware, dtoValidationMiddleware(LoginDTOSchema), routeHandler.login)
+  .post(
+    '/login',
+    ipRatesMiddleware,
+    dtoValidationMiddleware(LoginDTOSchema),
+    routeHandler.login
+  )
   .post('/refresh-token', withRefreshTokenMiddleware, routeHandler.updateTokens)
   .post(
     '/registration',
@@ -33,5 +39,17 @@ router
     ipRatesMiddleware,
     dtoValidationMiddleware(EmailDTOSchema),
     routeHandler.resendEmail
+  )
+  .post(
+    '/password-recovery',
+    ipRatesMiddleware,
+    dtoValidationMiddleware(EmailDTOSchema),
+    routeHandler.sendRecoveryCode
+  )
+  .post(
+    '/new-password',
+    ipRatesMiddleware,
+    dtoValidationMiddleware(UpdatePasswordByEmailDtoSchema),
+    routeHandler.confirmNewPassword
   )
   .post('/logout', withRefreshTokenMiddleware, routeHandler.logout);

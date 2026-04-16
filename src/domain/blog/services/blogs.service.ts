@@ -1,68 +1,123 @@
-import { BlogsRepo } from '../../../repositories/blogs/blogs.repo';
-import { IBlog } from '../types/blog.types';
-import { createId } from '../../../core/lib/create-id';
+import { inject, injectable } from 'inversify';
+
 import { BlogDTO } from '../schemas/dto.schema';
+import { IBlog } from '../types/blog.types';
+import { BlogsRepository } from '../../../repositories/blogs/blogs.repo';
+import { Result } from '../../../core/result/result.types';
+import { ResultStatus } from '../../../core/result/result-code';
 import { client } from '../../../db/mongo/mongo.db';
-import { PostsRepo } from '../../../repositories/posts/posts.repo';
-import { NotFoundError } from '../../../core/errors/not-found.error';
+import { PostsRepository } from '../../../repositories/posts/posts.repo';
 
-const createBlog = async (blog: BlogDTO) => {
-  const newBlog: IBlog = {
-    ...blog,
-    isMembership: false,
-    createdAt: new Date().toISOString(),
-  };
+@injectable()
+export class BlogsService {
+  constructor(
+    @inject(BlogsRepository) private readonly blogsRepository: BlogsRepository,
+    @inject(PostsRepository) private readonly postsRepository: PostsRepository
+  ) {}
 
-  const result = await BlogsRepo.create(newBlog);
+  private BlogDTOToModel(dto: BlogDTO): IBlog {
+    return {
+      ...dto,
+      isMembership: false,
+      createdAt: new Date().toISOString(),
+    };
+  }
 
-  return result.insertedId.toString();
-};
+  async createBlog(blog: BlogDTO): Promise<Result<{ id: string }>> {
+    const newBlog: IBlog = {
+      ...blog,
+      isMembership: false,
+      createdAt: new Date().toISOString(),
+    };
 
-const updateBlog = async (id: string, blog: BlogDTO) => {
-  const session = client.startSession();
+    const result = await this.blogsRepository.createBlog(
+      this.BlogDTOToModel(newBlog)
+    );
 
-  try {
-    await session.withTransaction(async () => {
-      const result = await BlogsRepo.replace(createId(id), blog, session);
+    return {
+      status: result.insertedId
+        ? ResultStatus.Success
+        : ResultStatus.BadRequest,
+      data: { id: result.insertedId.toString() ?? '' },
+      extensions: [],
+    };
+  }
 
-      if (!result.matchedCount) {
-        throw new NotFoundError(
-          `В репозитории нет блога с id ${id}`,
-          'updateBlog'
+  async updateBlog(id: string, blog: BlogDTO): Promise<Result> {
+    const result: Result = {
+      status: ResultStatus.Success,
+      data: null,
+      extensions: [],
+    };
+
+    const session = client.startSession();
+
+    // TODO: Вероятно это потом тоже стоит вынести в IoC
+    try {
+      await session.withTransaction(async () => {
+        const replaceResult = await this.blogsRepository.replaceBlog(
+          id,
+          blog,
+          session
         );
-      }
 
-      await PostsRepo.replaceMany(
-        { blogId: id },
-        { $set: { blogName: blog.name } },
-        session
-      );
-    });
-  } finally {
-    await session.endSession();
+        if (!replaceResult.matchedCount) {
+          result.status = ResultStatus.NotFound;
+
+          return;
+        }
+
+        // TODO: Тоже отвратительно конечно. Если еще вернусь сюда - надо исправить
+        await this.postsRepository.replacePosts(
+          { blogId: id },
+          { $set: { blogName: blog.name } }
+        );
+      });
+
+      return result;
+    } catch {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        extensions: [],
+      };
+    } finally {
+      await session.endSession();
+    }
   }
-};
 
-const deleteBlog = async (id: string): Promise<boolean> => {
-  const session = client.startSession();
+  async deleteBlog(id: string): Promise<Result> {
+    const result: Result = {
+      status: ResultStatus.NoContent,
+      data: null,
+      extensions: [],
+    };
 
-  try {
-    return await session.withTransaction(async () => {
-      const blogDeleteResult = await BlogsRepo.remove(createId(id), session);
+    const session = client.startSession();
 
-      if (!blogDeleteResult.deletedCount) return false;
+    try {
+      await session.withTransaction(async () => {
+        const blogDeleteResult = await this.blogsRepository.removeBlog(
+          id,
+          session
+        );
 
-      await PostsRepo.removeAllByBlog(id, session);
+        if (!blogDeleteResult.deletedCount) return false;
 
-      return true;
-    });
-  } finally {
-    await session.endSession();
+        await this.postsRepository.removeAllPostsByBlog(id, session);
+
+        return true;
+      });
+
+      return result;
+    } catch {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        extensions: [],
+      };
+    } finally {
+      await session.endSession();
+    }
   }
-};
-
-export const BlogsService = {
-  createBlog,
-  updateBlog,
-  deleteBlog,
-};
+}

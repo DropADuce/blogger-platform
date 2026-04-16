@@ -11,10 +11,16 @@ import {
 import { buildQuery } from '../../../../core/lib/build-mongo-query';
 import { createWithPaginationResult } from '../../../../core/lib/create-with-paginatoin-result';
 import { blogsQueryRepo } from '../../../../repositories/blogs/blogs.query-repo';
-import { usersQueryRepo } from '../../../../repositories/users/users.query-repo';
-import { commentsService } from '../../../../domain/comment/services/comment.service';
 import { CommentDTO } from '../../../../domain/comment/schemas/comment.schema';
 import { commentsQueryRepo } from '../../../../repositories/comments/comments.query-repo';
+import { container } from '../../../compose/root';
+import { CommentService } from '../../../../domain/comment/services/comment.service';
+import { ResultStatus } from '../../../../core/result/result-code';
+import { UsersQueryRepository } from '../../../../repositories/users/users.query-repo';
+
+const postsService = container.get(PostsService);
+const commentsService = container.get(CommentService);
+const usersQueryRepository = container.get(UsersQueryRepository);
 
 const findPosts = withTryCatch(
   async (
@@ -48,9 +54,11 @@ const createPost = withTryCatch(
   async (req: Request<unknown, unknown, PostDTO>, res: Response) => {
     const blog = await blogsQueryRepo.findByID(req.body.blogId);
 
-    const postID = await PostsService.createPost(req.body, blog);
+    const createPostResult = await postsService.createPost(req.body, blog);
 
-    const post = await postsQueryRepo.findByID(postID);
+    if (!createPostResult.data.id) res.sendStatus(HTTP_STATUS.BAD_REQUEST);
+
+    const post = await postsQueryRepo.findByID(createPostResult.data.id);
 
     return res.status(HTTP_STATUS.CREATED).send(post);
   }
@@ -61,9 +69,9 @@ const updatePost = async (
   res: Response
 ) => {
   try {
-    const success = await PostsService.updatePost(req.params.id, req.body);
+    const result = await postsService.updatePost(req.params.id, req.body);
 
-    return success
+    return result.status === ResultStatus.Success
       ? res.sendStatus(HTTP_STATUS.NO_CONTENT)
       : res.sendStatus(HTTP_STATUS.NOT_FOUND);
   } catch {
@@ -73,7 +81,7 @@ const updatePost = async (
 
 const deletePost = async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const success = await PostsService.deletePost(req.params.id);
+    const success = await postsService.deletePost(req.params.id);
 
     return success
       ? res.sendStatus(HTTP_STATUS.NO_CONTENT)
@@ -85,7 +93,12 @@ const deletePost = async (req: Request<{ id: string }>, res: Response) => {
 
 const getComments = withTryCatch(
   async (
-    req: Request<{ id: string }, unknown, unknown, Partial<WithSortAndPagination>>,
+    req: Request<
+      { id: string },
+      unknown,
+      unknown,
+      Partial<WithSortAndPagination>
+    >,
     res: Response
   ) => {
     const postId = req.params.id;
@@ -116,7 +129,9 @@ const addComment = withTryCatch(
 
     await postsQueryRepo.findByID(postId);
 
-    const user = await usersQueryRepo.findByTokenData(req.loginOrEmail ?? '');
+    const user = await usersQueryRepository.findByTokenData(
+      req.loginOrEmail ?? ''
+    );
 
     const commentID = await commentsService.leaveCommentByPost(
       req.body,

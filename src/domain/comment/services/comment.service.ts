@@ -1,68 +1,83 @@
 import { CommentDTO } from '../schemas/comment.schema';
 import { ICommentatorInfo, ICommentViewModel } from '../types/comment.types';
-import { commentsRepo } from '../../../repositories/comments/comments.repo';
-import { ForbiddenError } from '../../../core/errors/forbidden-error';
+import { CommentsRepository } from '../../../repositories/comments/comments.repo';
+import { inject, injectable } from 'inversify';
+import { Result } from '../../../core/result/result.types';
+import { ResultStatus } from '../../../core/result/result-code';
 
-const checkAuthor = (
-  comment: { userLogin: string; userId: string },
-  user: { login: string; userId: string }
-) => {
-  if (
-    comment.userLogin !== user.login ||
-    comment.userId !== user.userId
-  )
-    throw new ForbiddenError();
-};
+@injectable()
+export class CommentService {
+  constructor(
+    @inject(CommentsRepository)
+    private readonly commentsRepository: CommentsRepository
+  ) {}
 
-const leaveComment = async (
-  comment: CommentDTO,
-  commentator: ICommentatorInfo
-) =>
-  await commentsRepo.create({
-    ...comment,
-    commentatorInfo: commentator,
-    createdAt: new Date().toISOString(),
-  });
+  private checkAuthor(
+    comment: { userLogin: string; userId: string },
+    user: { login: string; userId: string }
+  ): Result {
+    return {
+      status:
+        comment.userLogin !== user.login || comment.userId !== user.userId
+          ? ResultStatus.Forbidden
+          : ResultStatus.Success,
+      data: null,
+      extensions: [],
+    };
+  }
 
-const leaveCommentByPost = async (
-  comment: CommentDTO,
-  commentator: ICommentatorInfo,
-  postId: string
-) =>
-  commentsRepo.create({
-    ...comment,
-    commentatorInfo: commentator,
-    postId,
-    createdAt: new Date().toISOString(),
-  });
+  leaveComment(
+    comment: CommentDTO,
+    commentator: ICommentatorInfo,
+  ) {
+    return this.commentsRepository.createComment({
+      ...comment,
+      commentatorInfo: commentator,
+      createdAt: new Date().toISOString(),
+    });
+  }
 
-const removeComment = async (
-  comment: ICommentViewModel,
-  user: { login: string; email: string; userId: string }
-) => {
-  checkAuthor(comment.commentatorInfo, user);
+  leaveCommentByPost(
+    comment: CommentDTO,
+    commentator: ICommentatorInfo,
+    postId: string
+  ) {
+    return this.commentsRepository.createComment({
+      ...comment,
+      commentatorInfo: commentator,
+      postId,
+      createdAt: new Date().toISOString(),
+    });
+  }
 
-  return await commentsRepo.remove(comment.id);
-};
+  async removeComment(
+    comment: ICommentViewModel,
+    user: { login: string; email: string; userId: string }
+  ) {
+    const checkAuthorResult = this.checkAuthor(comment.commentatorInfo, user);
 
-const updateComment = async (
-  comment: ICommentViewModel,
-  user: { login: string; email: string; userId: string },
-  dto: CommentDTO,
-) => {
-  checkAuthor(comment.commentatorInfo, user);
+    if (checkAuthorResult.status === ResultStatus.Success) {
+      await this.commentsRepository.removeComment(comment.id);
+    }
 
-  return await commentsRepo.update(comment.id, dto);
-};
+    return checkAuthorResult;
+  }
 
-const removeCommentByPost = async (postId: string) => {
-  return await commentsRepo.removeAllByPost(postId);
-};
+  async updateComment(
+    comment: ICommentViewModel,
+    user: { login: string; email: string; userId: string },
+    dto: CommentDTO
+  ) {
+    const checkAuthorResult = this.checkAuthor(comment.commentatorInfo, user);
 
-export const commentsService = {
-  leaveComment,
-  leaveCommentByPost,
-  updateComment,
-  removeComment,
-  removeCommentByPost,
-};
+    if (checkAuthorResult.status === ResultStatus.Success) {
+      await this.commentsRepository.updateComment(comment.id, dto)
+    }
+
+    return checkAuthorResult;
+  }
+
+  async removeCommentByPost(postId: string) {
+    return await this.commentsRepository.removeAllCommentsByPost(postId);
+  }
+}

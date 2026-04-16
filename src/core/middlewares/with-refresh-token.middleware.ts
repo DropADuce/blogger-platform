@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS } from '../constants/http-statuses.constants';
-import { usersQueryRepo } from '../../repositories/users/users.query-repo';
 import { JWTService } from '../../domain/auth/services/jwt.service';
 import { sessionsQueryRepo } from '../../repositories/sessions/sessions.query-repo';
 import { UnauthorizeError } from '../errors/unauthorize-error';
+import { container } from '../../app/compose/root';
+import { UsersQueryRepository } from '../../repositories/users/users.query-repo';
+
+const usersQueryRepository = container.get(UsersQueryRepository);
 
 export const withRefreshTokenMiddleware = async (
   req: Request,
@@ -15,11 +18,11 @@ export const withRefreshTokenMiddleware = async (
 
     const session = await sessionsQueryRepo.getSessionByDeviceId(tokenData.deviceId);
 
-    const user = await usersQueryRepo.findByID(session?.userId ?? '');
+    const user = await usersQueryRepository.findByID(session?.userId ?? '');
 
     if (!user) throw new UnauthorizeError();
 
-    const isInvalidToken = await usersQueryRepo.isTokenInBlackLit(
+    const isInvalidToken = await usersQueryRepository.isTokenInBlackLit(
       user.login || user.email,
       req.cookies.refreshToken
     );

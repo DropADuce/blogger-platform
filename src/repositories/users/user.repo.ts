@@ -1,32 +1,57 @@
-import { users } from '../../db/mongo/mongo.db';
 import { ObjectId } from 'mongodb';
-import { IUser } from '../../domain/user/types/user.types';
 
-export const usersRepo = {
-  create: async (user: IUser) => await users.insertOne(user),
-  remove: async (id: ObjectId) => await users.deleteOne({ _id: id }),
-  confirm: async (id: string) =>
-    await users.updateMany(
+import { users } from '../../db/mongo/mongo.db';
+import { IUser } from '../../domain/user/types/user.types';
+import { injectable } from 'inversify';
+
+@injectable()
+export class UsersRepository {
+  createUser(user: IUser) {
+    return users.insertOne(user);
+  }
+
+  updateUserPassword(id: string, password: string) {
+    return users.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { 'accountData.password': password } }
+    );
+  }
+
+  confirmCode(id: string) {
+    return users.updateOne(
       { _id: new ObjectId(id) },
       { $set: { 'emailConfirmData.isConfirmed': true } }
-    ),
-  removeAll: async () => await users.deleteMany(),
-  updateCode: (
+    );
+  }
+
+  updateConfirmCode(
     id: string,
-    { code, expDate }: { code: string; expDate: string }
-  ) =>
-    users.updateMany(
+    codePayload: { code: string; expDate: string }
+  ) {
+    return users.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
-          'emailConfirmData.code': code,
-          'emailConfirmData.exp_date': expDate,
+          'emailConfirmData.code': codePayload.code,
+          'emailConfirmData.exp_date': codePayload.expDate,
         },
       }
-    ),
-  discardToken: (id: string, token: string) =>
-    users.updateOne(
+    );
+  }
+
+  // TODO: Это удалить потом, когда будет время
+  discardToken(id: string, token: string) {
+    return users.updateOne(
       { _id: new ObjectId(id) },
       { $push: { 'authData.blackList': token } }
-    ),
-};
+    );
+  }
+
+  removeUser(id: string) {
+    return users.deleteOne({ _id: new ObjectId(id) });
+  }
+
+  removeAllUsers() {
+    return users.deleteMany({});
+  }
+}

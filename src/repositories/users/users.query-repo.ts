@@ -1,4 +1,6 @@
+import { injectable } from 'inversify';
 import { Filter, ObjectId, Sort, WithId } from 'mongodb';
+
 import { users } from '../../db/mongo/mongo.db';
 import { IUser } from '../../domain/user/types/user.types';
 import { mapMongoIdToId } from '../../core/lib/map-mongo-id-to-id';
@@ -17,29 +19,33 @@ interface IUserWhoModel {
   userId: string;
 }
 
-const mapUserToWhoModel = (user: WithId<IUser>): IUserWhoModel => ({
-  login: user.accountData.login,
-  email: user.accountData.email,
-  userId: user._id.toString(),
-});
+@injectable()
+export class UsersQueryRepository {
+  private mapUserToWhoModel(user: WithId<IUser>): IUserWhoModel {
+    return {
+      login: user.accountData.login,
+      email: user.accountData.email,
+      userId: user._id.toString(),
+    };
+  }
 
-const mapUserToViewModel = ({
-  _id,
-  accountData,
-}: WithId<IUser>): IUserViewModel =>
-  mapMongoIdToId({
+  private mapUserToViewModel({
     _id,
-    login: accountData.login,
-    email: accountData.email,
-    createdAt: accountData.createdAt,
-  });
+    accountData,
+  }: WithId<IUser>): IUserViewModel {
+    return mapMongoIdToId({
+      _id,
+      login: accountData.login,
+      email: accountData.email,
+      createdAt: accountData.createdAt,
+    });
+  }
 
-export const usersQueryRepo = {
-  findAll: async (params: {
+  async findAll(params: {
     sortParams: Sort;
     pagination: { skip: number; count: number };
     filter: Filter<IUser>;
-  }) => {
+  }) {
     const [foundedUsers, count] = await Promise.all([
       users
         .find(params.filter)
@@ -50,10 +56,10 @@ export const usersQueryRepo = {
       users.countDocuments(params.filter),
     ]);
 
-    return { users: foundedUsers.map(mapUserToViewModel), count };
-  },
+    return { users: foundedUsers.map(this.mapUserToViewModel), count };
+  }
 
-  findByID: async (id: string) => {
+  async findByID(id: string) {
     const user = await users.findOne({ _id: new ObjectId(id) });
 
     if (!user)
@@ -62,10 +68,10 @@ export const usersQueryRepo = {
         'usersQueryRepo.findByID'
       );
 
-    return mapUserToViewModel(user);
-  },
+    return this.mapUserToViewModel(user);
+  }
 
-  findByLoginOrEmail: async (loginOrEmail: string) => {
+  async findByLoginOrEmail(loginOrEmail: string) {
     const founded = await users.findOne({
       $or: [
         { 'accountData.login': loginOrEmail },
@@ -75,12 +81,12 @@ export const usersQueryRepo = {
 
     if (founded)
       return {
-        ...mapUserToViewModel(founded),
+        ...this.mapUserToViewModel(founded),
         password: founded.accountData.password,
       };
-  },
+  }
 
-  findByTokenData: async (loginOrEmail: string) => {
+  async findByTokenData(loginOrEmail: string) {
     const user = await users.findOne({
       $or: [
         { 'accountData.login': loginOrEmail },
@@ -94,10 +100,10 @@ export const usersQueryRepo = {
         'usersQueryRepo.findByTokenData'
       );
 
-    return mapUserToWhoModel(user);
-  },
+    return this.mapUserToWhoModel(user);
+  }
 
-  findByConfirmCode: async (code: string) => {
+  async findByConfirmCode(code: string) {
     const user = await users.findOne({
       $and: [
         { 'emailConfirmData.code': code },
@@ -106,14 +112,15 @@ export const usersQueryRepo = {
     });
 
     return user ? mapMongoIdToId(user) : null;
-  },
+  }
 
-  getEmailConfirmData: (id: string) =>
-    users
+  getEmailConfirmData(id: string) {
+    return users
       .findOne({ _id: new ObjectId(id) })
-      .then((user) => user?.emailConfirmData),
+      .then((user) => user?.emailConfirmData);
+  }
 
-  getIsConfirmed: async (email: string) => {
+  async getIsConfirmed(email: string) {
     const user = await users.findOne({ 'accountData.email': email });
 
     if (user)
@@ -121,12 +128,11 @@ export const usersQueryRepo = {
         _id: user._id,
         isConfirmed: user.emailConfirmData.isConfirmed,
       });
-  },
-  isTokenInBlackLit: (loginOrEmail: string, token: string) => users.findOne({
-    $or: [
-      { login: loginOrEmail },
-      { email: loginOrEmail }
-    ],
-    "authData.blackList": token
-  })
-};
+  }
+  async isTokenInBlackLit(loginOrEmail: string, token: string) {
+    return users.findOne({
+      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+      'authData.blackList': token,
+    });
+  }
+}

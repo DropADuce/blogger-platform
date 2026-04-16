@@ -21,6 +21,11 @@ import {
   WithSortAndPagination,
   WithSortAndPaginationSchema,
 } from '../../../../core/schemas/query-params.schema';
+import { container } from '../../../compose/root';
+import { ResultStatus } from '../../../../core/result/result-code';
+
+const blogsService = container.get(BlogsService);
+const postsService = container.get(PostsService);
 
 const findBlogs = withTryCatch(
   async (
@@ -56,7 +61,12 @@ const findBlogById = withTryCatch(
 
 const findPostsByBlogId = withTryCatch(
   async (
-    req: Request<{ id: string }, unknown, unknown, Partial<WithSortAndPagination>>,
+    req: Request<
+      { id: string },
+      unknown,
+      unknown,
+      Partial<WithSortAndPagination>
+    >,
     res: Response
   ) => {
     const params = WithSortAndPaginationSchema.parse(req.query);
@@ -80,9 +90,12 @@ const findPostsByBlogId = withTryCatch(
 
 const createBlog = withTryCatch(
   async (req: Request<unknown, unknown, BlogDTO>, res) => {
-    const id = await BlogsService.createBlog(req.body);
+    const createBlogResult = await blogsService.createBlog(req.body);
 
-    const blog = await blogsQueryRepo.findByID(id);
+    if (createBlogResult.status !== ResultStatus.Success)
+      return res.sendStatus(HTTP_STATUS.BAD_REQUEST);
+
+    const blog = await blogsQueryRepo.findByID(createBlogResult.data.id);
 
     return res.status(HTTP_STATUS.CREATED).send(blog);
   }
@@ -101,9 +114,11 @@ const createPostByBlogId = withTryCatch(
         'post /blog:/{blogID}/post'
       );
 
-    const postID = await PostsService.createPost(req.body, blog);
+    const createPostResult = await postsService.createPost(req.body, blog);
 
-    const post = await postsQueryRepo.findByID(postID);
+    if (!createPostResult.data.id) return res.sendStatus(HTTP_STATUS.NOT_FOUND);
+
+    const post = await postsQueryRepo.findByID(createPostResult.data.id);
 
     return res.status(HTTP_STATUS.CREATED).send(post);
   }
@@ -111,7 +126,7 @@ const createPostByBlogId = withTryCatch(
 
 const updateBlog = withTryCatch(
   async (req: Request<{ id: string }, unknown, BlogDTO>, res: Response) => {
-    await BlogsService.updateBlog(req.params.id, req.body);
+    await blogsService.updateBlog(req.params.id, req.body);
 
     const blog = await blogsQueryRepo.findByID(req.params.id);
 
@@ -123,7 +138,7 @@ const deleteBlog = withTryCatch(
   async (req: Request<{ id: string }>, res: Response) => {
     const blog = await blogsQueryRepo.findByID(req.params.id);
 
-    await BlogsService.deleteBlog(blog.id);
+    await blogsService.deleteBlog(blog.id);
 
     return res.sendStatus(HTTP_STATUS.NO_CONTENT);
   }

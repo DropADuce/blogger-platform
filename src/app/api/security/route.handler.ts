@@ -2,16 +2,21 @@ import { Request, Response } from 'express';
 
 import { withTryCatch } from '../../../core/lib/with-try-catch';
 import { sessionsQueryRepo } from '../../../repositories/sessions/sessions.query-repo';
-import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
 import { UnauthorizeError } from '../../../core/errors/unauthorize-error';
 import { JWTService } from '../../../domain/auth/services/jwt.service';
 import { sessionsService } from '../../../domain/session/services/session.service';
 import { HTTP_STATUS } from '../../../core/constants/http-statuses.constants';
 import { ForbiddenError } from '../../../core/errors/forbidden-error';
 import { NotFoundError } from '../../../core/errors/not-found.error';
+import { container } from '../../compose/root';
+import { UsersQueryRepository } from '../../../repositories/users/users.query-repo';
+
+const usersQueryRepository = container.get(UsersQueryRepository);
 
 const getActiveSessions = withTryCatch(async (req: Request, res: Response) => {
-  const user = await usersQueryRepo.findByLoginOrEmail(req.loginOrEmail ?? '');
+  const user = await usersQueryRepository.findByLoginOrEmail(
+    req.loginOrEmail ?? ''
+  );
 
   if (!user) throw new UnauthorizeError();
 
@@ -22,7 +27,7 @@ const getActiveSessions = withTryCatch(async (req: Request, res: Response) => {
 
 const removeOtherSessions = withTryCatch(
   async (req: Request, res: Response) => {
-    const user = await usersQueryRepo.findByLoginOrEmail(
+    const user = await usersQueryRepository.findByLoginOrEmail(
       req.loginOrEmail ?? ''
     );
 
@@ -47,7 +52,7 @@ const removeCurrentSession = withTryCatch(
 
     const loginOrEmail = req.loginOrEmail ?? '';
 
-    const user = await usersQueryRepo.findByLoginOrEmail(loginOrEmail);
+    const user = await usersQueryRepository.findByLoginOrEmail(loginOrEmail);
     const session = await sessionsQueryRepo.getSessionByDeviceId(deviceId);
 
     if (!session)

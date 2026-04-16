@@ -1,21 +1,40 @@
-import { posts } from '../../db/mongo/mongo.db';
+import { injectable } from 'inversify';
 import { ClientSession, Filter, ObjectId, UpdateFilter } from 'mongodb';
-import { IPost } from '../../domain/post/types/post.types';
 
-export const PostsRepo = {
-  create: async (post: IPost) => await posts.insertOne(post),
-  replace: async (
-    id: ObjectId,
-    post: Partial<IPost>,
-    session?: ClientSession
-  ) => await posts.updateOne({ _id: id }, { $set: post }, session),
-  replaceMany: (
+import { IPost } from '../../domain/post/types/post.types';
+import { posts } from '../../db/mongo/mongo.db';
+
+@injectable()
+export class PostsRepository {
+  createPost(post: IPost) {
+    return posts.insertOne(post);
+  }
+
+  replacePost(id: string, post: Partial<IPost>, session?: ClientSession) {
+    return posts.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: post },
+      session
+    );
+  }
+
+  replacePosts(
     filter: Filter<IPost>,
     updater: UpdateFilter<IPost>,
     session?: ClientSession
-  ) => posts.updateMany(filter, updater, session),
-  remove: async (id: ObjectId) => await posts.deleteOne({ _id: id }),
-  removeAll: async () => await posts.deleteMany({}),
-  removeAllByBlog: async (id: string, session?: ClientSession) =>
-    await posts.deleteMany({ blogId: id }, { ...session }),
-};
+  ) {
+    return posts.updateMany(filter, updater, session);
+  }
+
+  removePost(id: string) {
+    return posts.deleteOne({ _id: new ObjectId(id) });
+  }
+
+  removeAllPosts() {
+    return posts.deleteMany({});
+  }
+
+  removeAllPostsByBlog(id: string, session?: ClientSession) {
+    return posts.deleteMany({ blogId: id }, session);
+  }
+}

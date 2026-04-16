@@ -1,49 +1,48 @@
 import bcrypt from 'bcrypt';
+import { inject, injectable } from 'inversify';
 
-import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
+import { UsersQueryRepository } from '../../../repositories/users/users.query-repo';
 import { UnauthorizeError } from '../../../core/errors/unauthorize-error';
 import { LoginDTO } from '../models/login.schema';
-import { usersRepo } from '../../../repositories/users/user.repo';
-import { Result } from '../../../core/result/result.types';
+import { UsersRepository } from '../../../repositories/users/user.repo';
 import { ResultStatus } from '../../../core/result/result-code';
 
-const login = async (loginDTO: LoginDTO) => {
-  const founded = await usersQueryRepo.findByLoginOrEmail(
-    loginDTO.loginOrEmail
-  );
+@injectable()
+export class AuthService {
+  constructor(
+    @inject(UsersRepository) private usersRepository: UsersRepository,
+    @inject(UsersQueryRepository)
+    private usersQueryRepository: UsersQueryRepository
+  ) {}
 
-  const isValid = await bcrypt.compare(
-    loginDTO.password,
-    founded?.password ?? ''
-  );
+  async login(dto: LoginDTO) {
+    const founded = await this.usersQueryRepository.findByLoginOrEmail(
+      dto.loginOrEmail
+    );
 
-  if (!isValid) throw new UnauthorizeError();
-};
+    const isValid = await bcrypt.compare(dto.password, founded?.password ?? '');
 
-const discardToken = async (
-  loginOrEmail: string,
-  token: string
-): Promise<Result> => {
-  const user = await usersQueryRepo.findByLoginOrEmail(loginOrEmail);
+    if (!isValid) throw new UnauthorizeError();
+  }
 
-  if (user) {
-    await usersRepo.discardToken(user.id, token);
+  async discardToken(loginOrEmail: string, token: string) {
+    const user =
+      await this.usersQueryRepository.findByLoginOrEmail(loginOrEmail);
+
+    if (user) {
+      await this.usersRepository.discardToken(user.id, token);
+
+      return {
+        status: ResultStatus.Success,
+        data: null,
+        extensions: [],
+      };
+    }
 
     return {
-      status: ResultStatus.Success,
+      status: ResultStatus.BadRequest,
       data: null,
       extensions: [],
     };
   }
-
-  return {
-    status: ResultStatus.BadRequest,
-    data: null,
-    extensions: [],
-  };
-};
-
-export const authService = {
-  login,
-  discardToken,
-};
+}

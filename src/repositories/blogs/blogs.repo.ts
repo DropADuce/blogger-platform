@@ -1,4 +1,6 @@
+import { injectable } from 'inversify';
 import { ClientSession, ObjectId } from 'mongodb';
+
 import { IBlog } from '../../domain/blog/types/blog.types';
 import { blogs } from '../../db/mongo/mongo.db';
 import { BlogDTO } from '../../domain/blog/schemas/dto.schema';
@@ -11,3 +13,22 @@ export const BlogsRepo = {
     await blogs.deleteOne({ _id: id }, session),
   removeAll: async () => await blogs.deleteMany({}),
 };
+
+@injectable()
+export class BlogsRepository {
+  createBlog(blog: IBlog) {
+    return blogs.insertOne(blog);
+  }
+
+  replaceBlog(id: string, blog: BlogDTO, session?: ClientSession) {
+    return blogs.updateOne({ _id: new ObjectId(id) }, { $set: blog }, session);
+  }
+
+  removeBlog(id: string, session?: ClientSession) {
+    return blogs.deleteOne({ _id: new ObjectId(id) }, session);
+  }
+
+  removeAll() {
+    return blogs.deleteMany({});
+  }
+}

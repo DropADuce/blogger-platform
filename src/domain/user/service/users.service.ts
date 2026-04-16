@@ -1,73 +1,81 @@
+import { inject, injectable } from 'inversify';
+
 import { UserDTO } from '../schemas/user.schema';
-import { usersRepo } from '../../../repositories/users/user.repo';
-import { createId } from '../../../core/lib/create-id';
-import { NotFoundError } from '../../../core/errors/not-found.error';
 import { createPassword } from '../../../core/lib/create-password';
+import { UsersQueryRepository } from '../../../repositories/users/users.query-repo';
 import { BadRequestError } from '../../../core/errors/bad-request-error';
-import { usersQueryRepo } from '../../../repositories/users/users.query-repo';
+import { UsersRepository } from '../../../repositories/users/user.repo';
 import { createExpDate } from '../../../core/lib/create-exp-date';
+import { NotFoundError } from '../../../core/errors/not-found.error';
 
-const findByLoginOrEmail = async (loginOrEmail: {
-  login: string;
-  email: string;
-}) => {
-  const [founded] = await Promise.all([
-    usersQueryRepo.findByLoginOrEmail(loginOrEmail.login),
-    usersQueryRepo.findByLoginOrEmail(loginOrEmail.email),
-  ]).then((result) => result.filter(Boolean));
+@injectable()
+export class UsersService {
+  constructor(
+    @inject(UsersRepository) private usersRepository: UsersRepository,
+    @inject(UsersQueryRepository)
+    private readonly usersQueryRepository: UsersQueryRepository
+  ) {}
 
-  return founded;
-};
+  private async findByLoginOrEmail(loginOrEmail: {
+    login: string;
+    email: string;
+  }) {
+    const [founded] = await Promise.all([
+      this.usersQueryRepository.findByLoginOrEmail(loginOrEmail.login),
+      this.usersQueryRepository.findByLoginOrEmail(loginOrEmail.email),
+    ]).then((result) => result.filter(Boolean));
 
-const create = async (user: UserDTO) => {
-  const password = await createPassword({ password: user.password });
-
-  // Оно вроде и не правильно, но по ТЗ это надо сделать в BLL
-  const founded = await findByLoginOrEmail(user);
-
-  if (founded) {
-    const duplicateField = founded.email === user.email ? 'email' : 'login';
-
-    throw new BadRequestError(
-      'Не уникальный пользователь',
-      'usersService.create',
-      {
-        errorsMessages: [
-          {
-            field: duplicateField,
-            message: 'Пользователь с тем же значением поля уже существует',
-          },
-        ],
-      }
-    );
+    return founded;
   }
 
-  return await usersRepo.create({
-    ...user,
-    accountData: {
+  async create(user: UserDTO) {
+    const password = await createPassword({ password: user.password });
+
+    // Оно вроде и не правильно, но по ТЗ это надо сделать в BLL
+    const founded = await this.findByLoginOrEmail(user);
+
+    if (founded) {
+      const duplicateField = founded.email === user.email ? 'email' : 'login';
+
+      throw new BadRequestError(
+        'Не уникальный пользователь',
+        'usersService.create',
+        {
+          errorsMessages: [
+            {
+              field: duplicateField,
+              message: 'Пользователь с тем же значением поля уже существует',
+            },
+          ],
+        }
+      );
+    }
+
+    return await this.usersRepository.createUser({
       ...user,
-      password,
-      createdAt: new Date().toISOString(),
-    },
-    emailConfirmData: {
-      code: crypto.randomUUID(),
-      exp_date: createExpDate(),
-      isConfirmed: false,
-    },
-  });
-};
+      accountData: {
+        ...user,
+        password,
+        createdAt: new Date().toISOString(),
+      },
+      emailConfirmData: {
+        code: crypto.randomUUID(),
+        exp_date: createExpDate(),
+        isConfirmed: false,
+      },
+      authData: {
+        blackList: [],
+      },
+    });
+  }
 
-const remove = async (id: string) => {
-  const result = await usersRepo.remove(createId(id));
+  async remove(id: string) {
+    const result = await this.usersRepository.removeUser(id);
 
-  if (!result.deletedCount)
-    throw new NotFoundError(
-      'Не найден ни один пользователь для удаления',
-      'usersService.remove'
-    );
-};
-
-export const usersService = {
-  create,
-  remove,
-};
+    if (!result.deletedCount)
+      throw new NotFoundError(
+        'Не найден ни один пользователь для удаления',
+        'usersService.remove'
+      );
+  }
+}
