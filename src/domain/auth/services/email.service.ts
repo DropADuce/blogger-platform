@@ -7,6 +7,7 @@ import { UsersQueryRepository } from '../../../repositories/users/users.query-re
 import { ResultStatus } from '../../../core/result/result-code';
 import { createPassword } from '../../../core/lib/create-password';
 import { Result } from '../../../core/result/result.types';
+import { API_ERROR } from '../../../core/types/error.types';
 
 @injectable()
 export class EmailService {
@@ -78,7 +79,7 @@ export class EmailService {
   async updatePasswordByRecoveryCode(dto: {
     newPassword: string;
     recoveryCode: string;
-  }): Promise<Result> {
+  }): Promise<Result<API_ERROR | null>> {
     const user = await this.usersQueryRepository.findByConfirmCode(
       dto.recoveryCode
     );
@@ -92,7 +93,13 @@ export class EmailService {
 
     return {
       status: isValid ? ResultStatus.NoContent : ResultStatus.BadRequest,
-      data: null,
+      data: isValid
+        ? null
+        : {
+            errorsMessages: [
+              { field: 'recoveryCode', message: 'Не валидный код' },
+            ],
+          },
       extensions: [],
     };
   }

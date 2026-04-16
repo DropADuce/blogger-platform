@@ -5,7 +5,9 @@ export const UpdatePasswordByEmailDtoSchema = z.object({
     .string()
     .min(6, 'Минимальня длинна пароля - 6 символов')
     .max(20, 'Максимальная длинна пароля - 20 символов'),
-  recoveryCode: z.string()
+  recoveryCode: z.uuidv4('Нужен код в формате uuidV4'),
 });
 
-export type UpdatePasswordByEmailDTO = z.infer<typeof UpdatePasswordByEmailDtoSchema>;
+export type UpdatePasswordByEmailDTO = z.infer<
+  typeof UpdatePasswordByEmailDtoSchema
+>;

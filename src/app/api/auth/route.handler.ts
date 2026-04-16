@@ -129,7 +129,7 @@ const sendRecoveryCode = withTryCatch(
   async (req: Request<unknown, unknown, EmailDTO>, res: Response) => {
     const user = await usersQueryRepository.findByLoginOrEmail(req.body.email);
 
-    emailService.sendRecoveryCode({
+    await emailService.sendRecoveryCode({
       userId: user?.id ?? '',
       email: req.body.email,
     });
@@ -145,7 +145,13 @@ const confirmNewPassword = withTryCatch(
   ) => {
     const result = await emailService.updatePasswordByRecoveryCode(req.body);
 
-    return res.sendStatus(mapResultCodeToHttp(result.status));
+    const status = mapResultCodeToHttp(result.status);
+
+    if (result.data) {
+      return res.status(status).send(result.data);
+    }
+
+    return res.sendStatus(status);
   }
 );
 
