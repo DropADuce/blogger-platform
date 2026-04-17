@@ -78,6 +78,9 @@ export class EmailService {
       subject: 'Восстановлене пароля',
       message: this.getRecoveryMessage(code),
     });
+
+    // К сожалению приходится так, иначе ловим блок от yandex
+    await new Promise((r) => setTimeout(r, 500));
   }
 
   async updatePasswordByRecoveryCode(dto: {

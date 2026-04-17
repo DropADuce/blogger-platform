@@ -28,15 +28,19 @@ export class UsersRepository {
     id: string,
     codePayload: { code: string; expDate: string }
   ) {
-    return users.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          'emailConfirmData.code': codePayload.code,
-          'emailConfirmData.exp_date': codePayload.expDate,
-        },
-      }
-    );
+    try {
+      return users.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            'emailConfirmData.code': codePayload.code,
+            'emailConfirmData.exp_date': codePayload.expDate,
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Ошибочка вышла');
+    }
   }
 
   // TODO: Это удалить потом, когда будет время
