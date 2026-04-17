@@ -73,7 +73,11 @@ export class EmailService {
       expDate: this.expDate,
     });
 
-    this.sendConfirmCode({ code, email: data.email });
+    this.sendEmail({
+      email: data.email,
+      subject: 'Восстановлене пароля',
+      message: this.getRecoveryMessage(code),
+    });
   }
 
   async updatePasswordByRecoveryCode(dto: {
