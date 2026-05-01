@@ -7,11 +7,17 @@ import { MongoIdSchema } from '../../../../db/mongo/mongo-id.schema';
 import { RouteHandler } from './route.handler';
 import { withJwtTokenMiddleware } from '../../../../core/middlewares/with-jwt-token.middleware';
 import { CommentDTOSchema } from '../../../../domain/comment/schemas/comment.schema';
+import { WithOptionalJwtTokenMiddleware } from '../../../../core/middlewares/with-optional-jwt-token.middleware';
 
 export const router = Router()
   .get('/', RouteHandler.findPosts)
   .get('/:id', idValidationMiddleware(MongoIdSchema), RouteHandler.findPostById)
-  .get('/:id/comments', idValidationMiddleware(MongoIdSchema), RouteHandler.getComments)
+  .get(
+    '/:id/comments',
+    WithOptionalJwtTokenMiddleware,
+    idValidationMiddleware(MongoIdSchema),
+    RouteHandler.getComments
+  )
   .post(
     '/',
     basicAuthMiddleware,

@@ -12,7 +12,7 @@ import { buildQuery } from '../../../../core/lib/build-mongo-query';
 import { createWithPaginationResult } from '../../../../core/lib/create-with-paginatoin-result';
 import { blogsQueryRepo } from '../../../../repositories/blogs/blogs.query-repo';
 import { CommentDTO } from '../../../../domain/comment/schemas/comment.schema';
-import { commentsQueryRepo } from '../../../../repositories/comments/comments.query-repo';
+import { CommentsQueryRepository } from '../../../../repositories/comments/comments.query-repo';
 import { container } from '../../../compose/root';
 import { CommentService } from '../../../../domain/comment/services/comment.service';
 import { ResultStatus } from '../../../../core/result/result-code';
@@ -21,6 +21,7 @@ import { UsersQueryRepository } from '../../../../repositories/users/users.query
 const postsService = container.get(PostsService);
 const commentsService = container.get(CommentService);
 const usersQueryRepository = container.get(UsersQueryRepository);
+const commentsQueryRepository = container.get(CommentsQueryRepository);
 
 const findPosts = withTryCatch(
   async (
@@ -107,10 +108,14 @@ const getComments = withTryCatch(
 
     await postsQueryRepo.findByID(postId);
 
-    const { comments, count } = await commentsQueryRepo.findBlogsByPostId(
-      postId,
-      buildQuery(params)
-    );
+    const user = await usersQueryRepository.findByLoginOrEmail(req.loginOrEmail ?? '')
+
+    const { comments, count } =
+      await commentsQueryRepository.findCommentsByPostWithLikes({
+        postId,
+        userId: user?.id ?? '',
+        paginationParams: buildQuery(params),
+      });
 
     return res.send(
       createWithPaginationResult({
@@ -133,13 +138,16 @@ const addComment = withTryCatch(
       req.loginOrEmail ?? ''
     );
 
-    const commentID = await commentsService.leaveCommentByPost(
+    const commentId = await commentsService.leaveCommentByPost(
       req.body,
       { userId: user.userId, userLogin: user.login },
       postId
     );
 
-    const comment = await commentsQueryRepo.findById(commentID);
+    const comment = await commentsQueryRepository.findCommentByIdWithLikes({
+      commentId,
+      userId: user.userId,
+    });
 
     return res.status(HTTP_STATUS.CREATED).send(comment);
   }

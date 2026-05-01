@@ -1,25 +1,28 @@
-import {
-  IComment,
-  ICommentByPost,
-} from '../../domain/comment/types/comment.types';
 import { comments } from '../../db/mongo/mongo.db';
 import { ObjectId } from 'mongodb';
 import { injectable } from 'inversify';
+import { Comment, CommentModel } from '../../db/mongo/entities/comment/comment.model';
 
 @injectable()
 export class CommentsRepository {
-  async createComment(comment: IComment | ICommentByPost) {
-    const result = await comments.insertOne(comment);
+  async createComment(comment: Comment) {
+    const doc = new CommentModel(comment);
 
-    return result.insertedId.toString();
+    await doc.save();
+
+    return doc._id.toString();
   }
 
   updateComment(id: string, comment: { content: string }) {
-    return comments.updateOne({ _id: new ObjectId(id) }, { $set: comment })
+    return CommentModel.findByIdAndUpdate(new ObjectId(id), comment, {
+      returnDocument: 'after',
+    });
   }
 
   removeComment(id: string) {
-    return comments.deleteOne({ _id: new ObjectId(id) });
+    return CommentModel.findByIdAndDelete(new ObjectId(id), {
+      returnDocument: 'before',
+    });
   }
 
   removeAllCommentsByPost(id: string) {

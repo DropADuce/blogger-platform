@@ -6,6 +6,7 @@ import { UsersRepository } from '../../../repositories/users/user.repo';
 import { CommentsRepository } from '../../../repositories/comments/comments.repo';
 import { ipRatesRepo } from '../../../repositories/ip-rates/ip-rates.repo';
 import { sessionsRepo } from '../../../repositories/sessions/sessions.repo';
+import { LikesRepository } from '../../../repositories/likes/likes.repo';
 
 @injectable()
 export class TestingService {
@@ -14,6 +15,7 @@ export class TestingService {
     @inject(PostsRepository) private postsRepository: PostsRepository,
     @inject(CommentsRepository) private commentsRepository: CommentsRepository,
     @inject(UsersRepository) private usersRepository: UsersRepository,
+    @inject(LikesRepository) private likesRepository: LikesRepository,
   ) {}
 
   async clearDatabase() {
@@ -22,6 +24,7 @@ export class TestingService {
       this.postsRepository.removeAllPosts(),
       this.commentsRepository.removeAllComments(),
       this.usersRepository.removeAllUsers(),
+      this.likesRepository.removeAllReactions(),
       ipRatesRepo.removeAll(),
       sessionsRepo.removeAll(),
     ]);

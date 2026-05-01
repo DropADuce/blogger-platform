@@ -13,6 +13,10 @@ import { UsersQueryRepository } from '../../repositories/users/users.query-repo'
 import { EmailService } from '../../domain/auth/services/email.service';
 import { AuthService } from '../../domain/auth/services/auth.service';
 import { UsersService } from '../../domain/user/service/users.service';
+import { LikesRepository } from '../../repositories/likes/likes.repo';
+import { LikesQueryRepository } from '../../repositories/likes/likes.query-repo';
+import { LikesService } from '../../domain/likes/services/likes.service';
+import { CommentsQueryRepository } from '../../repositories/comments/comments.query-repo';
 
 export const container: Container = new Container();
 
@@ -24,13 +28,18 @@ container.bind(BlogsService).toSelf();
 container.bind(PostsRepository).toSelf();
 container.bind(PostsService).toSelf();
 
-container.bind(CommentsRepository).toSelf();
 container.bind(CommentService).toSelf();
+container.bind(CommentsRepository).toSelf();
+container.bind(CommentsQueryRepository).toSelf();
 
 container.bind(UsersService).toSelf();
 container.bind(UsersRepository).toSelf();
 container.bind(UsersQueryRepository).toSelf();
 
 container.bind(EmailService).toSelf();
+
+container.bind(LikesService).toSelf();
+container.bind(LikesRepository).toSelf();
+container.bind(LikesQueryRepository).toSelf();
 
 container.bind(TestingService).toSelf();

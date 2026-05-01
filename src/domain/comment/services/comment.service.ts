@@ -1,9 +1,10 @@
 import { CommentDTO } from '../schemas/comment.schema';
-import { ICommentatorInfo, ICommentViewModel } from '../types/comment.types';
+import { ICommentViewModel } from '../types/comment.types';
 import { CommentsRepository } from '../../../repositories/comments/comments.repo';
 import { inject, injectable } from 'inversify';
 import { Result } from '../../../core/result/result.types';
 import { ResultStatus } from '../../../core/result/result-code';
+import { Comment, Commentator } from '../../../db/mongo/entities/comment/comment.model';
 
 @injectable()
 export class CommentService {
@@ -26,32 +27,30 @@ export class CommentService {
     };
   }
 
-  leaveComment(
-    comment: CommentDTO,
-    commentator: ICommentatorInfo,
-  ) {
-    return this.commentsRepository.createComment({
-      ...comment,
-      commentatorInfo: commentator,
-      createdAt: new Date().toISOString(),
-    });
-  }
+  // leaveComment(
+  //   comment: CommentDTO,
+  //   commentator: Commentator,
+  // ) {
+  //   return this.commentsRepository.createComment({
+  //     ...comment,
+  //     commentatorInfo: commentator,
+  //   });
+  // }
 
   leaveCommentByPost(
-    comment: CommentDTO,
-    commentator: ICommentatorInfo,
+    comment: Comment,
+    commentator: Commentator,
     postId: string
   ) {
     return this.commentsRepository.createComment({
       ...comment,
       commentatorInfo: commentator,
       postId,
-      createdAt: new Date().toISOString(),
     });
   }
 
   async removeComment(
-    comment: ICommentViewModel,
+    comment: { content: string; commentatorInfo: Commentator; id: string },
     user: { login: string; email: string; userId: string }
   ) {
     const checkAuthorResult = this.checkAuthor(comment.commentatorInfo, user);
@@ -71,7 +70,7 @@ export class CommentService {
     const checkAuthorResult = this.checkAuthor(comment.commentatorInfo, user);
 
     if (checkAuthorResult.status === ResultStatus.Success) {
-      await this.commentsRepository.updateComment(comment.id, dto)
+      await this.commentsRepository.updateComment(comment.id, dto);
     }
 
     return checkAuthorResult;

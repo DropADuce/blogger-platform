@@ -9,6 +9,7 @@ import {
 } from '../../domain/comment/types/comment.types';
 import { IIPRate } from '../../domain/ip-rates/rate.types';
 import { ISession } from '../../domain/session/types/session.types';
+import * as mongoose from 'mongoose';
 
 const BLOGS_COLLECTION_NAME = 'blogs';
 const POSTS_COLLECTION_NAME = 'posts';
@@ -39,6 +40,7 @@ export const runDB = async (url: string = ''): Promise<void> => {
 
   try {
     await client.connect();
+    await mongoose.connect(`${url}/${SETTINGS.DB_NAME}`)
     await DB.command({ ping: 1 });
 
     console.log('Успешно подключились к базе данных');

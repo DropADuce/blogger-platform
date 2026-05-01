@@ -8,6 +8,6 @@ type ExtensionType = {
 export type Result<T = null> = {
   status: ResultStatus;
   errorMessage?: string;
-  extensions: ExtensionType[];
+  extensions: Array<ExtensionType>;
   data: T;
 };
